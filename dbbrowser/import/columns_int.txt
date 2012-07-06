@@ -1,0 +1,9 @@
+sd_id
+AceType
+AceFlags
+AccessMask
+Flags
+NTSecurityDescriptor
+ObjectCategory
+msExchMailboxSecurityDescriptor
+Default-Object-Category

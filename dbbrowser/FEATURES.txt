@@ -1,0 +1,83 @@
+-----
+FRONTEND FEATURES OVERVIEW
+-----
+
+The frontend is a simple SQL query generator and SQL table browser.
+You can:
+- browse ANY MySQL table
+- generate filters by clicking on results and fields
+- hide some fields
+- perform NATURAL JOINs with 2 other tables
+- perform COUNT() operations on a specific field
+- sort results
+- dump results to TSV files
+- export/import your filter list
+- save/restore/share your search session
+
+A few features are discussed below.
+
+-----
+GLOBAL FILTERS
+-----
+
+Global filters are multiple WHERE clauses defined by clicking a filter link to 
+include (==) or exclude (!=) particular results.
+
+They add up to the global filter list and may be dropped individually at any 
+time.
+
+Using the search form at the top also sets up global filters.
+
+All filters are considered equally: all of them have to be satisfied to have a 
+corresponding result (AND). It is not yet possible to specify alternatives in 
+global filters (OR).
+
+-----
+QUICK FILTERS
+-----
+
+A quick filter is a single temporary WHERE clause. You can set it up by simply
+clicking an element, which will filter the results for the clicked value in the 
+considered field.
+
+Typical use case is to browse results and "surf" from one field to another: say
+you are looking at a user's mailbox, and put a quick filter for that user (i.e.
+clicked on his name in the CommonName column). Seeing what other mailboxes his
+trustees can also access is just one click away: just click on the trustee name 
+in the TrusteeSID or TrusteeCN column, and you will switch to that view.
+
+Global filters are not affected.
+
+-----
+SEARCH FORM
+-----
+
+Search form allows one to search specific fields for value using SQL operators
+other than = and !=.
+
+Syntax mimics SQL syntax. By default, spaces will be replaced by '%' wildcards.
+
+You may search for a field's value in another field by leaving the textbox empty 
+and selecting the other field in the dropdown list next to it which defaults to 
+"*text search (use text field)*".
+
+-----
+FILTER IMPORT/EXPORT
+-----
+
+The global filter list may be exported to a basic text file, one WHERE clause
+by line.
+You may also modify this file before importing it to have more complex filters
+that the frontend cannot generate (i.e. search on substrings, etc.).
+
+-----
+SESSIONS
+-----
+
+The current audit session may be saved (all filters, shown fields, state of 
+preferences...), restored and shared:
+- enter a description, click 'save' and the session name will appear in the 
+dropdown list;
+- select one, click restore to resume a session. This will redirect to a URL 
+that can be shared to other users to assist in auditing.
+

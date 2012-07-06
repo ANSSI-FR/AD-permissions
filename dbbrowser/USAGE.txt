@@ -1,0 +1,54 @@
+-----
+PREREQUISITES
+-----
+
+Perform initial setup instructions available in INSTALL.txt.
+
+-----
+DATA IMPORT
+-----
+
+1) Perform a dump (see esent_dump).
+
+The esent_dump.exe tool will produce the following files:
+ace-ntds.dit-dump.csv	actual content of security descriptors
+cat-ntds.dit-dump.csv	categories identifiers and descriptions
+sid-ntds.dit-dump.csv	object data
+
+2) Put the three files *with these filenames* in the import/data/ folder.
+
+3) Change working directory to import/ and run the batch file to import data:
+$ cd import/
+import$ ./import_ace_data.sh <arg>
+
+The import_ace_data.sh script takes one argument:
+none	does not perform the last two join operations. RAW data will still be 
+	browsable.
+fast	does a single join, and does not try to "decode" trustee SIDs. 
+	TrusteeSID is still decoded on-the-fly by the frontend, but is nothing
+	easily searchable.
+full	does two join operations, that will fill the TructeeCN field, thus 
+	making it searchable and human-readable. This will slow import 
+	operations.
+
+
+Data file will be:
+- copied to a temporary folder;
+- parsed and imported into a generic table, which schema will be generated from
+file header (type will be varchar(255) for every column but those named in
+columns_int.txt);
+- distributed across various tables to allow on-the-fly decoding of SIDs and 
+GUIDs by the frontend;
+- joined to precompute two result tables which will be the ones to browser for 
+auditing purposes : ACE_AD and ACE_EXCH.
+
+THESE TABLES ARE OVERWRITTEN BY EVERY IMPORT.
+This allows for periodic auditing and session replay (see FEATURES.txt).
+
+4) Browse the audit tables: 
+- by table name: ACE_AD and ACE_EXCH
+- by table description (only tables that are imported by the scripts have 
+descriptions)
+
+5) Don't forget to save you sessions to replay them at a later date: see the 
+bottom of the frontend.

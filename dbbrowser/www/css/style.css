@@ -1,0 +1,169 @@
+/*
+Copyright or © or Copr. Pierre Capillon, 2012.
+
+pierre.capillon@ssi.gouv.fr
+
+This software is a computer program whose purpose is to retrieve Active
+Directory objects permissions from an ESENT database file.
+
+This software is governed by the CeCILL license under French law and
+abiding by the rules of distribution of free software.  You can  use, 
+modify and/ or redistribute the software under the terms of the CeCILL
+license as circulated by CEA, CNRS and INRIA at the following URL
+"http://www.cecill.info". 
+
+As a counterpart to the access to the source code and  rights to copy,
+modify and redistribute granted by the license, users are provided only
+with a limited warranty  and the software's author,  the holder of the
+economic rights,  and the successive licensors  have only  limited
+liability. 
+
+In this respect, the user's attention is drawn to the risks associated
+with loading,  using,  modifying and/or developing or reproducing the
+software by the user in light of its specific status of free software,
+that may mean  that it is complicated to manipulate,  and  that  also
+therefore means  that it is reserved for developers  and  experienced
+professionals having in-depth computer knowledge. Users are therefore
+encouraged to load and test the software's suitability as regards their
+requirements in conditions enabling the security of their systems and/or 
+data to be ensured and,  more generally, to use and operate it in the 
+same conditions as regards security. 
+
+The fact that you are presently reading this means that you have had
+knowledge of the CeCILL license and that you accept its terms.
+*/
+
+		body {
+			font-family: Verdana, "Sans serif";
+			font-size: 9pt;
+		}
+		
+		a {
+			text-decoration: none;
+			font-weight: bold;
+		}
+		
+		a:visited {
+			color: #00F;
+		}
+		
+		a:hover {
+			text-decoration: underline;
+		}
+		
+		table {
+			background-color: #FEFEFF;
+		}
+		
+		td {
+			font-family: "Courier New", "Sans serif";
+			white-space: nowrap;
+			padding-left: 16px;
+			padding-right: 16px;
+			vertical-align: top;
+		}
+		
+		th {
+			background-color: #EEE;
+			white-space: nowrap;
+		}
+		
+		td:hover {
+			background-color: #FCC;
+		}
+				
+		tr:hover {
+			background-color: #FEE;
+		}
+		
+		.tdtext:hover {
+			cursor: pointer;
+		}
+		
+		#guid_div,#guid_iot_div,#tag_div {
+			position: fixed; 
+			top: 0px; 
+			right: 0px; 
+			width: 420px; 
+			/* height: 80px; */
+			border-style: dashed; 
+			border-width: 1px; 
+			border-color: #F66; 
+			background-color: #FCC;
+			text-align: center;
+		}
+		
+		#accessmask_div {
+			position: fixed; 
+			top: 0px; 
+			left: 0px; 
+			width: 400px; 
+			/* height: 80px; */
+			border-style: dashed; 
+			border-width: 1px; 
+			border-color: #F66; 
+			background-color: #FCC;
+			text-align: left;
+			padding: 20px;
+		}
+		
+		#accessmaskexch_div {
+			position: fixed; 
+			top: 0px; 
+			left: 0px; 
+			width: 400px; 
+			/* height: 80px; */
+			border-style: dashed; 
+			border-width: 1px; 
+			border-color: #F66; 
+			background-color: #FCC;
+			text-align: left;
+			padding: 20px;
+		}
+		
+		/*	---				*/
+		/*			Tooltips	*/
+		.tooltip {
+			border-style: none none none solid; 
+			border-width: 1px; 
+			border-color: #DEDEDE;
+		}
+		
+		.tooltip2 {
+			border-style: none none none solid; 
+			border-width: 1px; 
+			border-color: #DEDEDE;
+			text-align: right;
+			list-style-type: none;
+		}
+
+		#tt {
+			position:absolute; 
+			display:block; 
+		}
+
+		#tttop {
+			display:block; 
+			height:5px; 
+			margin-left:5px; 
+			overflow:hidden;
+		}
+
+		#ttcont {
+			display:block; 
+			padding:2px 12px 3px 7px; 
+			margin-left:5px; 
+			/* background-color:#587292; */
+			/* background-color: #282828; */
+			background-color: #DDD;
+			color:#000;
+		}
+
+		#ttbot {
+			display:block; 
+			height:5px; 
+			margin-left:5px; 
+			overflow:hidden;
+		}
+
+		

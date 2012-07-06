@@ -1,0 +1,64 @@
+-----
+REQUIREMENTS
+-----
+
+This should be used on Linux, with the following tools available:
+bash
+iconv
+dos2unix
+mysql-server (5 or later)
+mysql-client (5 or later)
+php5
+md5sum
+sed
+grep
+
+-----
+INSTALLATION INSTUCTIONS
+-----
+
+Copy all the files wherever you want.
+www/ should be made available by a web server.
+
+-----
+PERMISSIONS
+-----
+
+The following permissions shall be set:
+
+www/			readable by web server
+www/db_tables.txt	writable by web server
+www/db_session.txt	writable by web server
+www/sessions/		writable by web server
+www/data/		writable by import scripts
+import/tmp/		writable by import scripts
+import/			writable by import scripts
+www/settings.php	readable by import scripts
+import/*.sh		executable by user
+import/scripts/generic_scripts/*.sh	executable by user
+
+Usually, this would result in chgrp www-data && chmod g+w and chmod +x for 
+shell scripts.
+
+-----
+INITIAL SETUP
+-----
+
+1) Create a mysql database and a user with read/write permissions on it.
+Default configuration assumes the following: 
+username: auditad
+password: auditad
+database: auditad
+
+Different users may be used for data import (scripts) and audit (php frontend).
+
+2) Edit www/settings.php accordingly.
+
+3) Change your current working directory to the import/ folder then run the init script:
+create_default_db.sh
+
+It will simply create the default DB structure (from default_db_schema.sql).
+
+4) It works! You are ready to import data.
+See USAGE.txt on how to use the scripts.
+

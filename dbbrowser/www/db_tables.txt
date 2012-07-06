@@ -1,0 +1,4 @@
+ADEMPTY|Empty table
+ACE_AD|AUDIT TABLE: Standard Active Directory related ACEs
+ACE_EXCH|AUDIT TABLE: Exchange related ACEs
+

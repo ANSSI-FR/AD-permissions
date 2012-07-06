@@ -1,0 +1,24 @@
+-----
+KNOWN ISSUES
+-----
+
+GENERAL
+
+- Ugly code. The browser was done in roughly 1 day of coding, then just-in-time
+adjustments.
+- Full of SQL injections, XSS, whatever vulnerability you may find. Well, this 
+is a SQL-query generator after all.
+- Full of hardcoded cases.
+
+- You may completely crash the browser with erroneous SQL queries. Just reset 
+your session by visiting /index.php?logtable=ADEMPTY
+
+FILTERS/SEARCH
+
+- Some field values are not properly escaped by quick/global filters and result
+in the inability to search for specific values.
+
+SESSIONS
+
+- Sessions may be broken if PHP is updated. Session files might not be 
+transferrable to other instances of the dbbrowser.
