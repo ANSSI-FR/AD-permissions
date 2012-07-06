@@ -1,8 +1,0 @@
-CREATE TABLE IF NOT EXISTS `SID` (
-  `LDAPDisplayName` varchar(255) DEFAULT NULL,
-  `ObjectSID` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
-INSERT INTO SID(`LDAPDisplayName`,`ObjectSID`)
-SELECT `Common-Name`, `Object-SID` 
-FROM 20120706_142245_Objects WHERE `Object-SID` LIKE 'S-%';
