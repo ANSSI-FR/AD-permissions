@@ -85,7 +85,7 @@ class DBBrowser
 		global $base;
 		global $logtable;
 
-		session_start();
+		// session_start();
 		
 		/* previous session parameter restoration, if available */
 		if(isset($_SESSION[$scid.'_limit']))
@@ -193,7 +193,7 @@ class DBBrowser
 	function processJoinTable()
 	{
 		global $scid;
-		/* changement par rapport à la session ? */
+		/* Did it change from saved session? */
 		if(
 		(isset($_GET['jointable']) && !empty($_GET['jointable'])
 		&& isset($_GET['joinmethod']) && !empty($_GET['joinmethod']))
@@ -253,7 +253,7 @@ class DBBrowser
 			$this->groupby = "";
 			unset($_SESSION[$scid.'_groupby']);
 		}
-		/* pas de changement par rapport à la session */
+		/* no change from saved session */
 		else if(
 		(isset($_SESSION[$scid.'_jointable']) && isset($_SESSION[$scid.'_joinmethod']))
 		|| 
@@ -402,11 +402,12 @@ class DBBrowser
 					unset($_SESSION[$scid.'_shown_fields'][$field]);
 			}
 			
-			foreach($_SESSION[$scid.'_table_fields'] as $field) {
-				if(strstr($field, "COUNT(*) as count_") !== FALSE)
-					unset($_SESSION[$scid.'_table_fields'][$field]);
+			if(isset($_SESSION[$scid.'_table_fields'])) {
+				foreach($_SESSION[$scid.'_table_fields'] as $field) {  
+					if(strstr($field, "COUNT(*) as count_") !== FALSE)
+						unset($_SESSION[$scid.'_table_fields'][$field]);
+				}
 			}
-
 
 		}
 		
@@ -798,7 +799,8 @@ class DBBrowser
 	
 	function setGlobalFilterStr()
 	{
-		$this->global_filters_str = implode(" AND ", $this->global_filters);
+		if(isset($this->global_filters) && is_array($this->global_filters))
+			$this->global_filters_str = implode(" AND ", $this->global_filters);
 	}
 	
 	function getGlobalFilterStr()
@@ -910,10 +912,11 @@ class DBBrowser
 		global $proto, $scid;
 		$html = '<table>';
 		//for($i = 0; $i < count($this->global_filters); $i++) {
-		foreach(array_keys($this->global_filters) as $key) {
-			$html .= '<tr><th>'.$this->global_filters[$key].'</th><td><a href="'.$proto.'://'.$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"].'?drop_global_filter='.$key.'">DROP</a></td></tr>';
+		if(isset($this->global_filters) && is_array($this->global_filters)) {
+			foreach(array_keys($this->global_filters) as $key) {
+				$html .= '<tr><th>'.$this->global_filters[$key].'</th><td><a href="'.$proto.'://'.$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"].'?drop_global_filter='.$key.'">DROP</a></td></tr>';
+			}
 		}
-		
 		$html.= '</table><br>';
 		$html.= '<a href="'.$proto.'://'.$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"].'?clear_global_filters=true"> RESET GLOBAL FILTERS </a><br>';
 		
@@ -940,6 +943,7 @@ class DBBrowser
 		if(!empty($this->jointable2) && !empty($this->joinmethod2))
 			$join_str .= " ".$this->joinmethod2." " . $this->jointable2 . " ";
 		
+		$groupby_str = "";
 		if(!empty($this->groupby))
 			$groupby_str = " GROUP BY " . $this->groupby . " ";
 		
