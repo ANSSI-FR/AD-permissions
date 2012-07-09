@@ -396,10 +396,12 @@ class DBBrowser
 				if(strstr($field, "COUNT(*) as count_") !== FALSE)
 					unset($this->shown_fields[$field]);
 			}
-			
-			foreach($_SESSION[$scid.'_shown_fields'] as $field) {
-				if(strstr($field, "COUNT(*) as count_") !== FALSE)
-					unset($_SESSION[$scid.'_shown_fields'][$field]);
+
+			if(isset($_SESSION[$scid.'_shown_fields'])) {			
+				foreach($_SESSION[$scid.'_shown_fields'] as $field) {
+					if(strstr($field, "COUNT(*) as count_") !== FALSE)
+						unset($_SESSION[$scid.'_shown_fields'][$field]);
+				}
 			}
 			
 			if(isset($_SESSION[$scid.'_table_fields'])) {
