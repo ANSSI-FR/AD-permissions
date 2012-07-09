@@ -680,11 +680,11 @@ class DBBrowser
 			}
 			
 			if(isset($_GET['global_filter_value_field']) && !empty($_GET['global_filter_value_field']))
-				$this->global_filters[] = $prefix.$_GET['global_filter_field'] . " " . $type . " " . $_GET['global_filter_value_field'];
+				$this->global_filters[] = "`".$prefix.$_GET['global_filter_field'] . "` " . $type . " `" . $_GET['global_filter_value_field']."`";
 			else if($_GET['global_filter_field'] == "filename")
-				$this->global_filters[] = $prefix.$_GET['global_filter_field'] . " " . $type . " '" . $wildchar . basename(str_replace('\\', '/', $_GET['global_filter_value'])) . $wildchar . "'";
+				$this->global_filters[] = "`".$prefix.$_GET['global_filter_field'] . "` " . $type . " '" . $wildchar . basename(str_replace('\\', '/', $_GET['global_filter_value'])) . $wildchar . "'";
 			else if($_GET['global_filter_field'] == "tag_type" && $_GET['global_filter_type'] == 'isnot' && !empty($_GET['global_filter_value']))
-				$this->global_filters[] = '(tag_type IS NULL OR '.$prefix.$_GET['global_filter_field'] . " " . $type . " '" . $wildchar . $_GET['global_filter_value'] . $wildchar . "')";
+				$this->global_filters[] = '(tag_type IS NULL OR `'.$prefix.$_GET['global_filter_field'] . "` " . $type . " '" . $wildchar . $_GET['global_filter_value'] . $wildchar . "')";
 			else if($_GET['global_filter_field'] == "AccessMask" && !empty($_GET['global_filter_value']) && isset($_GET['global_filter_operator']) && !empty($_GET['global_filter_operator']) && ($_GET['global_filter_operator'] == '>'))
 				$this->global_filters[] = "( ".$prefix."AccessMask & " . $_GET['global_filter_value'] . " > 0)";
 			else if($_GET['global_filter_field'] == "AccessMask" && !empty($_GET['global_filter_value']) && isset($_GET['global_filter_operator']) && !empty($_GET['global_filter_operator']) && ($_GET['global_filter_operator'] == 'is'))
@@ -692,7 +692,7 @@ class DBBrowser
 			else if($_GET['global_filter_field'] == "AccessMask" && !empty($_GET['global_filter_value']) && isset($_GET['global_filter_operator']) && !empty($_GET['global_filter_operator']))
 				$this->global_filters[] = "( ".$prefix."AccessMask & " . $_GET['global_filter_value'] . " " . $_GET['global_filter_operator'] . " 0)";
 			else
-				$this->global_filters[] = $prefix.$_GET['global_filter_field'] . " " . $type . " '" . $wildchar . $_GET['global_filter_value'] . $wildchar . "'";
+				$this->global_filters[] = "`".$prefix.$_GET['global_filter_field'] . "` " . $type . " '" . $wildchar . $_GET['global_filter_value'] . $wildchar . "'";
 			
 		}
 		
@@ -702,7 +702,7 @@ class DBBrowser
 			$this->quick_filter = "";
 			$this->quick_value = "";
 			
-			/* reprocess pour vider les filtres */
+			/* reprocess to empty filters */
 			$_GET['clear_quick_filter'] = "true";
 			$this->processQuickFilter();
 		}
@@ -819,9 +819,9 @@ class DBBrowser
 			$this->setStart();
 		}
 		else if(isset($_GET['quick_filter']) && isset($_GET['quick_value'])) {
-			$this->quick_filter = $_GET['quick_filter'];
+			$this->quick_filter = "`".$_GET['quick_filter']."`";
 			$this->quick_value = $_GET['quick_value'];
-			$_SESSION[$scid.'_quick_filter'] = $_GET['quick_filter'];
+			$_SESSION[$scid.'_quick_filter'] = "`".$_GET['quick_filter']."`";
 			$_SESSION[$scid.'_quick_value'] = $_GET['quick_value'];
 			
 			$this->setLimit();
