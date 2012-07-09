@@ -38,10 +38,14 @@ global $scid;
 $scid = md5($_SERVER['SCRIPT_FILENAME']);
 global $proto;
 
+/* dirty HTTPS hack */
+/*
 if($_SERVER['REMOTE_ADDR'] == "127.0.0.1" || substr($_SERVER['REMOTE_ADDR'], 0, 10) == "192.168.0.")
 	$proto = "http";
 else 
 	$proto = "https";
+*/
+$proto = "http";
 	
 global $dbbrowser_version;
 global $host;
