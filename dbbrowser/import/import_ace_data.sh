@@ -80,7 +80,7 @@ fi
 echo "Creating indexes on joined attributes..."
 echo "*** THIS MIGHT TAKE SOME TIME (hint: watch mysql process status) ***"
 
-echo "ALTER TABLE  \`$table_ace\` ADD INDEX (  \`sd_id\` ) ;" >> ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_ace\` ADD INDEX (  \`sd_id\` ) ;" > ./tmp/indexes.sql
 echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`ms-Exch-Mailbox-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
 echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`NT-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
 
