@@ -76,6 +76,16 @@ if [ -f "./data/ace-ntds.dit-dump.csv" ]; then
 	$parser "$OWN_PATH/data/ace-ntds.dit-dump.csv" "[$ts] Security Descriptors" "$OWN_PATH/../www/" "$table_ace"
 fi
 
+# Create indexes to speed up left outer join
+echo "Creating indexes on joined attributes..."
+echo "*** THIS MIGHT TAKE SOME TIME (hint: watch mysql process status) ***"
+
+echo "ALTER TABLE  \`$table_ace\` ADD INDEX (  \`sd_id\` ) ;" >> ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`ms-Exch-Mailbox-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`NT-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
+
+mysql -u $login -p$pass $database < "./tmp/indexes.sql"
+
 # temporary files
 mkdir -p tmp
 
@@ -118,11 +128,12 @@ mysql -u $login -p$pass $database < "./tmp/guid.sql"
 # Import SIDs to auditad.SID
 echo "Populating global table of SIDs..."
 echo "CREATE TABLE IF NOT EXISTS \`SID\` (
-  \`LDAPDisplayName\` varchar(255) DEFAULT NULL,
-  \`ObjectSID\` varchar(255) DEFAULT NULL
+  \`LDAPDisplayName\` varchar(200) NOT NULL,
+  \`ObjectSID\` varchar(100) NOT NULL,
+  PRIMARY KEY (  \`LDAPDisplayName\` ,  \`ObjectSID\` ) 
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-INSERT INTO SID(\`LDAPDisplayName\`,\`ObjectSID\`)
+INSERT IGNORE INTO SID(\`LDAPDisplayName\`,\`ObjectSID\`)
 SELECT \`Common-Name\`, \`Object-SID\` 
 FROM $table_sid WHERE \`Object-SID\` LIKE 'S-%';" > ./tmp/sid.sql
 
