@@ -33,6 +33,17 @@ The fact that you are presently reading this means that you have had
 knowledge of the CeCILL license and that you accept its terms.
 */
 
+//ATT to LDAP display names dictionary
+unsigned char * translateATT(
+	IN unsigned char * columnListName
+	);
+
+//Is current column interesting for us?
+int ValidateColumn(
+	IN unsigned char *main_arg,
+	IN unsigned char *columnListName
+	);
+
 /* Dump ACE to file line per line in the following format:
 *  ownerSID, groupSID, ACEType, ACEFlags, AccessMask, (Flags), (ObjectType guid), (InheritedObjectType guid), TrusteeSID
 */

@@ -62,6 +62,10 @@ knowledge of the CeCILL license and that you accept its terms.
 
 #include "esent_dump.h"
 
+//Global var for exchange SD column name, depends on schema
+char exchangeMailboxSDCol[32]="ATTp";
+
+
 
 void PrintUsage()
 	{
@@ -72,9 +76,80 @@ void PrintUsage()
 		printf("\tace: dump the AD ACE from sd_table\n");
 		printf("\tcat: dump object categories number to description\n");
 		printf("\tad: dump the whole AD datatable\n");
-		printf("Columns names have to be reordered manually at the moment\n");
 		exit(-1);	
 	}
+
+
+
+//ATT to LDAP display names dictionary
+unsigned char * translateATT(
+	IN unsigned char * columnListName
+	)
+{
+	switch(atoi(columnListName + 4)) {
+	case 3: 
+		return "Common-Name";
+	case 11:
+		return "Organizational-Unit-Name";
+	case 1376281:
+		return "Domain-Component";
+	case 131532:
+		return "LDAP-Display-Name";
+	case 590480:
+		return "User-Principal-Name";
+	case 131102: 
+		return "Attribute-ID";
+	case 591540:
+		return "msDS-IntId";
+	case 590689:
+		return "Pek-List";
+	case 590045:
+		return "Username";
+	case 589879:
+		return "DBCS-Pwd";
+	case 589914:
+		return "Unicode-Pwd";
+	case 589970:
+		return "Object-Sid";
+	case 590433:
+		return "Sid-History";
+	case 589832:
+			return "User-Account-Control";
+	case 589949:
+		return "Supplemental-Credentials";
+	case 590606:
+		return "Object-Category";
+	case 590607:
+		return "Default-Object-Category";
+	case 131353:
+		return "NT-Security-Descriptor";
+	case 589972:
+		return "Schema-ID-GUID";
+	case 590164:
+		return "Rights-Guid";
+	}
+	return "";
+}
+
+
+
+//Is current column interesting for us?
+int ValidateColumn(
+	IN unsigned char *main_arg,
+	IN unsigned char *columnListName
+	)
+{
+	if(!strcmp("ad",main_arg)
+		|| (!strcmp("ace",main_arg) && (!strcmp("sd_value",columnListName) || !strcmp("sd_id",columnListName)))
+		|| (!strcmp("sid",main_arg) && (!strcmp("ATTp131353",columnListName) || !strcmp("ATTr589970",columnListName) || !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTk589972",columnListName) || !strcmp("ATTb590606",columnListName) || !strcmp("ATTm590164",columnListName) || !strcmp(exchangeMailboxSDCol,columnListName)))
+		|| (!strcmp("att",main_arg) && (!strcmp("ATTm3",columnListName) || !strcmp("ATTc131102",columnListName) || !strcmp("ATTj591540",columnListName)))
+		|| (!strcmp("cat",main_arg) && (!strcmp("ATTm3",columnListName) || !strcmp("ATTb590607",columnListName)))
+		)
+		return 1;
+	else
+		return 0;
+
+}
 
 
 
@@ -258,7 +333,6 @@ typedef	struct _COLUMNLIST {
 	FILE *dump;
 	char dumpFileName[32];
 
-	char exchangeMailboxSDCol[32]="";
 	LPWSTR Guid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
 
@@ -282,8 +356,8 @@ typedef	struct _COLUMNLIST {
 
 	if(!strcmp(argv[1],"sid"))
 	{
-		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(ATTp<int> found with 'esent_dump att' for ms-Exch-Mailbox-Security-Descriptor)\n");
-		scanf_s("%s",&exchangeMailboxSDCol, 32);
+		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for ms-Exch-Mailbox-Security-Descriptor, \nfound in 'esent_dump att' results)\n");
+		scanf_s("%s",&exchangeMailboxSDCol[4], 28);
 	}
 
 	//Our result file
@@ -295,14 +369,7 @@ typedef	struct _COLUMNLIST {
 		return(-1);
 	}
 
-	if(!strcmp(argv[1],"sid"))
-		fprintf(dump, "Object-SID\tRights-Guid\tOrganizational-Unit-Name\tSchema-ID-GUID\tCommon-Name\tNT-Security-Descriptor\tObject-Category\tms-Exch-Mailbox-Security-Descriptor\n");
-	if(!strcmp(argv[1],"ace"))
-		fprintf(dump, "sd_id\tPrimaryOwner\tPrimaryGroup\tACEType\tACEFlags\tAccessMask\tFlags\tObjectType\tInheritedObjectType\tTrusteeSID\n");
-	if(!strcmp(argv[1],"att"))
-		fprintf(dump, "Attribute-ID\tmsDS-IntId\tLDAP-Display-Name\n");
-	if(!strcmp(argv[1],"cat"))
-		fprintf(dump, "Default-Object-Category\tLDAP-Display-Name\n");
+
 	// Initialize ESENT. 
 
 	err = JetSetSystemParameter(0, JET_sesidNil, JET_paramDatabasePageSize, 8192, NULL);
@@ -416,7 +483,10 @@ typedef	struct _COLUMNLIST {
 	{
 		columnList = columnList->next;
 		if(!strcmp("ad",argv[1]))
-			fprintf(dump,"%d:%s,",columnList->type,columnList->name);
+			fprintf(dump,"%d:%s\t",columnList->type,columnList->name);
+		else
+			if(ValidateColumn(argv[1], columnList->name))
+				fprintf(dump, "%s\t", translateATT(columnList->name));
 	};
 	fprintf(dump,"\n");
 
@@ -430,12 +500,7 @@ typedef	struct _COLUMNLIST {
 		{
 			columnList = columnList->next;
 
-			if(!strcmp("ad",argv[1])
-				|| (!strcmp("ace",argv[1]) && (!strcmp("sd_value",columnList->name) || !strcmp("sd_id",columnList->name)))
-				|| (!strcmp("sid",argv[1]) && (!strcmp("ATTp131353",columnList->name) || !strcmp("ATTr589970",columnList->name) || !strcmp("ATTm3",columnList->name) || !strcmp("ATTm11",columnList->name) || !strcmp("ATTk589972",columnList->name) || !strcmp("ATTb590606",columnList->name) || !strcmp("ATTm590164",columnList->name) || !strcmp(exchangeMailboxSDCol,columnList->name)))
-				|| (!strcmp("att",argv[1]) && (!strcmp("ATTm3",columnList->name) || !strcmp("ATTc131102",columnList->name) || !strcmp("ATTj591540",columnList->name)))
-				|| (!strcmp("cat",argv[1]) && (!strcmp("ATTm3",columnList->name) || !strcmp("ATTb590607",columnList->name)))
-				)
+			if(ValidateColumn(argv[1], columnList->name))
 			{
 				JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
 				//printf("Error-3 : 0x%.8X, size : %d\n", GetLastError(), jetSize);
