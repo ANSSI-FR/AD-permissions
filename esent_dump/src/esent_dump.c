@@ -331,7 +331,8 @@ typedef	struct _COLUMNLIST {
 	unsigned int i;
 
 	FILE *dump;
-	char dumpFileName[32];
+	char dumpFileName[64];
+    SYSTEMTIME lt;
 
 	LPWSTR Guid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
@@ -361,7 +362,8 @@ typedef	struct _COLUMNLIST {
 	}
 
 	//Our result file
-	sprintf_s(dumpFileName, 32, "%s-%s-dump.csv",argv[1], argv[2]);
+	GetLocalTime(&lt);
+	sprintf_s(dumpFileName, 64, "%s_ntds_%02d-%02d-%04d_%02dh%02d.csv",argv[1], lt.wDay, lt.wMonth, lt.wYear, lt.wHour, lt.wMinute);
 	fopen_s(&dump, dumpFileName, "w");
 	if (dump == 0)
 	{
