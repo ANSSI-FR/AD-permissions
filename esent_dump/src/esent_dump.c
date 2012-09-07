@@ -363,7 +363,8 @@ typedef	struct _COLUMNLIST {
 
 	//Our result file
 	GetLocalTime(&lt);
-	sprintf_s(dumpFileName, 64, "%s_ntds_%02d-%02d-%04d_%02dh%02d.csv",argv[1], lt.wDay, lt.wMonth, lt.wYear, lt.wHour, lt.wMinute);
+	//sprintf_s(dumpFileName, 64, "%s_ntds_%02d-%02d-%04d_%02dh%02d.csv",argv[1], lt.wDay, lt.wMonth, lt.wYear, lt.wHour, lt.wMinute);
+	sprintf_s(dumpFileName, 64, "%s-ntds.dit-dump.csv", argv[1]);
 	fopen_s(&dump, dumpFileName, "w");
 	if (dump == 0)
 	{
