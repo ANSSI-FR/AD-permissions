@@ -86,6 +86,9 @@ unsigned char * translateATT(
 	IN unsigned char * columnListName
 	)
 {
+	if(!strcmp(columnListName, exchangeMailboxSDCol))
+		return "ms-Exch-Mailbox-Security-Descriptor";
+
 	switch(atoi(columnListName + 4)) {
 	case 3: 
 		return "Common-Name";
@@ -142,8 +145,8 @@ int ValidateColumn(
 	if(!strcmp("ad",main_arg)
 		|| (!strcmp("ace",main_arg) && (!strcmp("sd_value",columnListName) || !strcmp("sd_id",columnListName)))
 		|| (!strcmp("sid",main_arg) && (!strcmp("ATTp131353",columnListName) || !strcmp("ATTr589970",columnListName) || !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTk589972",columnListName) || !strcmp("ATTb590606",columnListName) || !strcmp("ATTm590164",columnListName) || !strcmp(exchangeMailboxSDCol,columnListName)))
-		|| (!strcmp("att",main_arg) && (!strcmp("ATTm3",columnListName) || !strcmp("ATTc131102",columnListName) || !strcmp("ATTj591540",columnListName)))
-		|| (!strcmp("cat",main_arg) && (!strcmp("ATTm3",columnListName) || !strcmp("ATTb590607",columnListName)))
+		|| (!strcmp("att",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTc131102",columnListName) || !strcmp("ATTj591540",columnListName)))
+		|| (!strcmp("cat",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTb590607",columnListName)))
 		)
 		return 1;
 	else
@@ -357,7 +360,7 @@ typedef	struct _COLUMNLIST {
 
 	if(!strcmp(argv[1],"sid"))
 	{
-		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for ms-Exch-Mailbox-Security-Descriptor, \nfound in 'esent_dump att' results)\n");
+		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for msExchMailboxSecurityDescriptor, \nfound in 'esent_dump att' results)\n");
 		scanf_s("%s",&exchangeMailboxSDCol[4], 28);
 	}
 
