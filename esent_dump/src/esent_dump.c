@@ -335,7 +335,7 @@ typedef	struct _COLUMNLIST {
 
 	FILE *dump;
 	char dumpFileName[64];
-    SYSTEMTIME lt;
+    //SYSTEMTIME lt;
 
 	LPWSTR Guid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
@@ -365,7 +365,7 @@ typedef	struct _COLUMNLIST {
 	}
 
 	//Our result file
-	GetLocalTime(&lt);
+	//GetLocalTime(&lt);
 	//sprintf_s(dumpFileName, 64, "%s_ntds_%02d-%02d-%04d_%02dh%02d.csv",argv[1], lt.wDay, lt.wMonth, lt.wYear, lt.wHour, lt.wMinute);
 	sprintf_s(dumpFileName, 64, "%s-ntds.dit-dump.csv", argv[1]);
 	fopen_s(&dump, dumpFileName, "w");
@@ -375,6 +375,8 @@ typedef	struct _COLUMNLIST {
 		return(-1);
 	}
 
+	if(!strcmp(argv[1],"ace"))
+		fprintf(dump, "sd_id\tPrimaryOwner\tPrimaryGroup\tACEType\tACEFlags\tAccessMask\tFlags\tObjectType\tInheritedObjectType\tTrusteeSID\n");
 
 	// Initialize ESENT. 
 
