@@ -371,6 +371,7 @@ int main(int argc, char * argv[]) {
 	if(!strcmp(argv[1],"sid"))
 	{
 		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for msExchMailboxSecurityDescriptor, \nfound in 'esent_dump att' results)\n");
+		printf("Otherwise just input anything and press enter\n");
 		scanf_s("%s",&exchangeMailboxSDCol[4], 28);
 	}
 
@@ -521,12 +522,16 @@ int main(int argc, char * argv[]) {
 
 			if(ValidateColumn(argv[1], columnList->name))
 			{
+				//NOTE that this approach implies post processing multi valued columns if you re use this code...
 				err = JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
+
+				//positive are warnings, -1047 is invalid buffer size which is expected here
 				if (err < 0 && err != -1047)
 				{
-					printf("JetRetrieveColumn : %i, jetSize : %d\n", err, jetSize);
-					exit(-1);
+					printf("JetRetrieveColumn error : %i, jetSize : %d, continuing anyway\n", err, jetSize);
+					continue;
 				}
+			
 				//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
 				memset(jetBuffer,0,32768);
 
@@ -606,12 +611,18 @@ int main(int argc, char * argv[]) {
 						UuidToString((UUID *)jetBuffer, (RPC_WSTR *)&Guid);
 						fwprintf(dump,L"%s",Guid);
 					}
-					else
-						/*hex or int
+					else //hex dump
 						for(i=0;i<jetSize;i++)
-						fprintf(dump,"%.2X",jetBuffer[i]);
-						*/
+							fprintf(dump,"%.2X",jetBuffer[i]);
+
+					/* dumping type 11 as int (?)
+						else
+						{
 						fprintf(dump,"%d",*(int *)jetBuffer);
+						printf("dump type 11 as int : %d\n", *(int *)jetBuffer);
+						}
+						*/
+						
 					break;
 					//widechar text types
 				case 10:
