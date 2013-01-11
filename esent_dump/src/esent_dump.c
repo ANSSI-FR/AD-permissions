@@ -68,16 +68,16 @@ char exchangeMailboxSDCol[32]="ATTp";
 
 
 void PrintUsage()
-	{
-		printf("Usage: esent_dump [option] <ntdsfile>\n");
-		printf("Options, mutually exclusive, do 1st 4 for ACE audit:\n");
-		printf("\tatt: dump column naming columns\n");
-		printf("\tsid: dump the Common-Name/OU-Name to SID, Object-Category, NT SD and Mailbox SD indexes\n");
-		printf("\tace: dump the AD ACE from sd_table\n");
-		printf("\tcat: dump object categories number to description\n");
-		printf("\tad: dump the whole AD datatable\n");
-		exit(-1);	
-	}
+{
+	printf("Usage: esent_dump [option] <ntdsfile>\n");
+	printf("Options, mutually exclusive, do 1st 4 for ACE audit:\n");
+	printf("\tatt: dump column naming columns\n");
+	printf("\tsid: dump the Common-Name/OU-Name to SID, Object-Category, NT SD and Mailbox SD indexes\n");
+	printf("\tace: dump the AD ACE from sd_table\n");
+	printf("\tcat: dump object categories number to description\n");
+	printf("\tad: dump the whole AD datatable\n");
+	exit(-1);	
+}
 
 
 
@@ -117,7 +117,7 @@ unsigned char * translateATT(
 	case 590433:
 		return "Sid-History";
 	case 589832:
-			return "User-Account-Control";
+		return "User-Account-Control";
 	case 589949:
 		return "Supplemental-Credentials";
 	case 590606:
@@ -160,38 +160,37 @@ int ValidateColumn(
 *  ownerSID, groupSID, ACEType, ACEFlags, AccessMask, (Flags), (ObjectType guid), (InheritedObjectType guid), TrusteeSID
 */
 void DumpACE(
-			 IN long long sd_id,
-			 IN unsigned char *buffer,
-			 IN FILE *dump
-				)
+	IN long long sd_id,
+	IN unsigned char *buffer,
+	IN FILE *dump
+	)
 {
 
 	BOOL daclPresent, daclDefaulted;
 	PACL dacl;
-	LPWSTR stringOwner, stringGroup;
+	LPWSTR stringOwner = NULL;
+	LPWSTR stringGroup = NULL;
 	PSID owner, group;
 	BOOL ownerDefaulted, groupDefaulted;
 	LPVOID ace;
-	LPWSTR stringTrustee;
+	LPWSTR stringTrustee = NULL;
 	LPWSTR OTGuid, IOTGuid;
 	unsigned int i;
 
 
 	owner = (PSID)malloc(sizeof(SID));
 	GetSecurityDescriptorOwner(buffer, &owner, &ownerDefaulted);
-	stringOwner = (LPWSTR)malloc(64);
 	ConvertSidToStringSid(owner, &stringOwner);
 
 	group = (PSID)malloc(sizeof(SID));
 	GetSecurityDescriptorGroup(buffer, &group, &groupDefaulted);
-	stringGroup = (LPWSTR)malloc(64);
 	ConvertSidToStringSid(group, &stringGroup);
 
 
 	dacl = (PACL)malloc(sizeof(ACL));
 	GetSecurityDescriptorDacl(buffer, &daclPresent, &dacl, &daclDefaulted);
 
-	stringTrustee = (LPWSTR)malloc(64);
+	//stringTrustee = (LPWSTR)malloc(64);
 	OTGuid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 	IOTGuid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
@@ -201,8 +200,8 @@ void DumpACE(
 		if((((ACE_HEADER *)ace)->AceFlags & INHERITED_ACE) != INHERITED_ACE)
 		{
 			fwprintf(dump,L"\n");			
-			wcsncpy_s(stringTrustee, sizeof(stringTrustee), L"S-?",8);
-						
+			
+
 
 			//Standard allow&deny ACE
 			if(((ACE_HEADER *)ace)->AceType < 0x5)
@@ -217,6 +216,7 @@ void DumpACE(
 					((ACCESS_ALLOWED_ACE *)ace)->Mask,
 					stringTrustee 
 					);
+
 			}
 			//Object ACE
 			else
@@ -280,10 +280,20 @@ void DumpACE(
 					stringTrustee 
 					);
 			}
+
+			LocalFree(stringTrustee);
+			stringTrustee = NULL;
+
 		}	
 
 	}
-	
+
+	LocalFree(stringOwner);
+	stringOwner = NULL;
+
+	LocalFree(stringGroup);
+	stringGroup = NULL;
+
 }
 
 
@@ -292,8 +302,8 @@ void DumpACE(
 
 int main(int argc, char * argv[]) {
 
-		//Linked list to contain the datatable columns metadata
-typedef	struct _COLUMNLIST {
+	//Linked list to contain the datatable columns metadata
+	typedef	struct _COLUMNLIST {
 		int type;
 		int id;
 		char name[16];
@@ -335,17 +345,17 @@ typedef	struct _COLUMNLIST {
 
 	FILE *dump;
 	char dumpFileName[64];
-    //SYSTEMTIME lt;
+	//SYSTEMTIME lt;
 
 	LPWSTR Guid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
-
-	LPWSTR stringSid = (LPWSTR)malloc(sizeof(PSID));
+	LPWSTR stringSid = NULL;
 	long long sd_id = 0;
-	
+
 	listHead->next = NULL;
 	columnList = listHead;
 
+	//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
 	jetBuffer = (unsigned char *)malloc(32768);
 
 	if( argc < 3)
@@ -364,7 +374,7 @@ typedef	struct _COLUMNLIST {
 		scanf_s("%s",&exchangeMailboxSDCol[4], 28);
 	}
 
-	//Our result file
+	//Our result file, don't modify if you want to use auto import scripts from dbbrowser
 	//GetLocalTime(&lt);
 	//sprintf_s(dumpFileName, 64, "%s_ntds_%02d-%02d-%04d_%02dh%02d.csv",argv[1], lt.wDay, lt.wMonth, lt.wYear, lt.wHour, lt.wMinute);
 	sprintf_s(dumpFileName, 64, "%s-ntds.dit-dump.csv", argv[1]);
@@ -379,6 +389,7 @@ typedef	struct _COLUMNLIST {
 		fprintf(dump, "sd_id\tPrimaryOwner\tPrimaryGroup\tACEType\tACEFlags\tAccessMask\tFlags\tObjectType\tInheritedObjectType\tTrusteeSID\n");
 
 	// Initialize ESENT. 
+	// See http://msdn.microsoft.com/en-us/library/windows/desktop/gg269297(v=exchg.10).aspx for error codes
 
 	err = JetSetSystemParameter(0, JET_sesidNil, JET_paramDatabasePageSize, 8192, NULL);
 
@@ -416,13 +427,13 @@ typedef	struct _COLUMNLIST {
 	err = JetGetColumnInfo(sesid, dbid, tableName, "Id", columndefid, sizeof(JET_COLUMNDEF), JET_ColInfo);
 
 	err = JetGetColumnInfo(sesid, dbid, tableName, "Type", columndeftype, sizeof(JET_COLUMNDEF), JET_ColInfo);
-	
+
 	err = JetGetColumnInfo(sesid, dbid, tableName, "ColtypOrPgnoFDP", columndeftypecol, sizeof(JET_COLUMNDEF), JET_ColInfo);
-	
+
 	err = JetGetColumnInfo(sesid, dbid, tableName, "Name", columndefname, sizeof(JET_COLUMNDEF), JET_ColInfo);
-	
+
 	err = JetGetColumnInfo(sesid, dbid, tableName, "ObjIdTable", columndefobjid, sizeof(JET_COLUMNDEF), JET_ColInfo);
-	
+
 
 
 
@@ -484,7 +495,7 @@ typedef	struct _COLUMNLIST {
 	err = JetOpenTable(sesid, dbid, tableName, 0, 0, JET_bitTableReadOnly, &tableid);
 	printf("[*]Opened table: %s\n", tableName);
 
-	
+
 	printf("Dumping %s column names...\n", tableName);
 	columnList = listHead;
 	while(columnList->next)
@@ -499,7 +510,7 @@ typedef	struct _COLUMNLIST {
 	fprintf(dump,"\n");
 
 	printf("Dumping content...\n");
-	
+
 	JetMove(sesid, tableid, JET_MoveFirst, 0);
 	do
 	{
@@ -510,113 +521,119 @@ typedef	struct _COLUMNLIST {
 
 			if(ValidateColumn(argv[1], columnList->name))
 			{
-				JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
-				//printf("Error-3 : 0x%.8X, size : %d\n", GetLastError(), jetSize);
+				err = JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
+				if (err != 0 && err != 1006 && err != 1004)
+				{
+					printf("JetRetrieveColumn : %i, jetSize : %d\n", err, jetSize);
+					exit(-1);
+				}
 				//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
 				memset(jetBuffer,0,32768);
 
 				switch(columnList->type) {
-	//signed int types
-	case 4:
-		JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-		//Specific useraccountcontrol code
-		if(!strcmp("users",argv[1]) && !strcmp("ATTj589832",columnList->name))
-		{
-		if(jetBuffer[0] & ADS_UF_ACCOUNTDISABLE)
-			fprintf(dump,"disabled ");
-		if(jetBuffer[0] & ADS_UF_DONT_EXPIRE_PASSWD)
-			fprintf(dump,"dontexpire ");
-		if(jetBuffer[0] & ADS_UF_LOCKOUT)
-			fprintf(dump,"lockedout ");
-		if(jetBuffer[0] & ADS_UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED)
-			fprintf(dump,"reversiblepwd ");
-		}
-		else
-		fprintf(dump,"%d",*(int *)jetBuffer);
-		/*
-		fprintf(dump,"%u_",*(unsigned int *)jetBuffer);
-		for(unsigned int i=0;i<jetSize;i++)
-			fprintf(dump,"%.2X",jetBuffer[i]);
-*/
-		break;
-	//signed long long type
-	case 5:
-		JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-		if(!strcmp("sd_id",columnList->name))
-			sd_id = *(long long *)jetBuffer;
-		else
-			fprintf(dump,"%lld",*(long long *)jetBuffer);
-		break;
-	//Raw binary types
-	case 9:
-		JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-		for(i=0;i<jetSize;i++)
-			fprintf(dump,"%.2X",jetBuffer[i]);
-		break;
-	case 11:
-		/* We check matches on security descriptor, then SID
-		*  to display accordingly, otherwise hex dump
-		*/
-		JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					//signed int types
+				case 4:
+					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					//Specific useraccountcontrol code, currently dead code
+					if(!strcmp("users",argv[1]) && !strcmp("ATTj589832",columnList->name))
+					{
+						if(jetBuffer[0] & ADS_UF_ACCOUNTDISABLE)
+							fprintf(dump,"disabled ");
+						if(jetBuffer[0] & ADS_UF_DONT_EXPIRE_PASSWD)
+							fprintf(dump,"dontexpire ");
+						if(jetBuffer[0] & ADS_UF_LOCKOUT)
+							fprintf(dump,"lockedout ");
+						if(jetBuffer[0] & ADS_UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED)
+							fprintf(dump,"reversiblepwd ");
+					}
+					else
+						fprintf(dump,"%d",*(int *)jetBuffer);
+					/*
+					fprintf(dump,"%u_",*(unsigned int *)jetBuffer);
+					for(unsigned int i=0;i<jetSize;i++)
+					fprintf(dump,"%.2X",jetBuffer[i]);
+					*/
+					break;
+					//signed long long type
+				case 5:
+					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					if(!strcmp("sd_id",columnList->name))
+						sd_id = *(long long *)jetBuffer;
+					else
+						fprintf(dump,"%lld",*(long long *)jetBuffer);
+					break;
+					//Raw binary types
+				case 9:
+					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					for(i=0;i<jetSize;i++)
+						fprintf(dump,"%.2X",jetBuffer[i]);
+					break;
+				case 11:
+					/* We check matches on security descriptor, then SID
+					*  to display accordingly, otherwise hex dump
+					*/
+					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
 
-		if(!strcmp("sd_value",columnList->name) && IsValidSecurityDescriptor(jetBuffer))
-		{
-			//Correct sd_id because sd_id column is before sd_value column in sd_table
-			DumpACE(sd_id, jetBuffer, dump);
-		}
-		else if(!strcmp("ATTr589970",columnList->name) && IsValidSid(jetBuffer))
-		{
-			//AD SID storage swaps endianness in RID bytes (yeah !) 
-			unsigned char temp;
-			temp = jetBuffer[24];
-			jetBuffer[24] = jetBuffer[27];
-			jetBuffer[27] = temp;
-			temp = jetBuffer[25];
-			jetBuffer[25] = jetBuffer[26];
-			jetBuffer[26] = temp;
+					if(!strcmp("sd_value",columnList->name) && IsValidSecurityDescriptor(jetBuffer))
+					{
+						//Correct sd_id because sd_id column is before sd_value column in sd_table
+						DumpACE(sd_id, jetBuffer, dump);
+					}
+					else if(!strcmp("ATTr589970",columnList->name) && IsValidSid(jetBuffer))
+					{
+						//AD SID storage swaps endianness in RID bytes (yeah !) 
+						unsigned char temp;
+						temp = jetBuffer[24];
+						jetBuffer[24] = jetBuffer[27];
+						jetBuffer[27] = temp;
+						temp = jetBuffer[25];
+						jetBuffer[25] = jetBuffer[26];
+						jetBuffer[26] = temp;
 
-			ConvertSidToStringSid((PSID)jetBuffer, &stringSid);
-			fwprintf(dump, L"%s", stringSid);
-		}
-		//NT Security Descriptor index to lookup in sd_table
-		else if(!strcmp("sid",argv[1]) && ( !strcmp("ATTp131353",columnList->name) || !strcmp(exchangeMailboxSDCol,columnList->name) ))
-		{
-			fprintf(dump,"%d",*(int *)jetBuffer);
-		}
-		//Schema-Id-Guid
-		else if(!strcmp("sid",argv[1]) && !strcmp("ATTk589972",columnList->name) )
-		{
-			UuidToString((UUID *)jetBuffer, (RPC_WSTR *)&Guid);
-			fwprintf(dump,L"%s",Guid);
-		}
-		else
-			/*hex or int
-			for(i=0;i<jetSize;i++)
-				fprintf(dump,"%.2X",jetBuffer[i]);
-				*/
-			fprintf(dump,"%d",*(int *)jetBuffer);
-		break;
-	//widechar text types
-	case 10:
-	case 12:
-		JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-		for(i=0;i<jetSize/2;i++)
-			if((wchar_t)jetBuffer[2*i] != '\t' || (wchar_t)jetBuffer[2*i] != '\n' || (wchar_t)jetBuffer[2*i] != '\r')
-				fwprintf(dump,L"%c",(wchar_t)jetBuffer[2*i]);
-		break;
-		};
+						ConvertSidToStringSid((PSID)jetBuffer, &stringSid);
+						fwprintf(dump, L"%s", stringSid);
+						LocalFree(stringSid);
+						stringSid = NULL;
+					}
+					//NT Security Descriptor index to lookup in sd_table
+					else if(!strcmp("sid",argv[1]) && ( !strcmp("ATTp131353",columnList->name) || !strcmp(exchangeMailboxSDCol,columnList->name) ))
+					{
+						fprintf(dump,"%d",*(int *)jetBuffer);
+					}
+					//Schema-Id-Guid
+					else if(!strcmp("sid",argv[1]) && !strcmp("ATTk589972",columnList->name) )
+					{
+						UuidToString((UUID *)jetBuffer, (RPC_WSTR *)&Guid);
+						fwprintf(dump,L"%s",Guid);
+					}
+					else
+						/*hex or int
+						for(i=0;i<jetSize;i++)
+						fprintf(dump,"%.2X",jetBuffer[i]);
+						*/
+						fprintf(dump,"%d",*(int *)jetBuffer);
+					break;
+					//widechar text types
+				case 10:
+				case 12:
+					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					for(i=0;i<jetSize/2;i++)
+						if((wchar_t)jetBuffer[2*i] != '\t' || (wchar_t)jetBuffer[2*i] != '\n' || (wchar_t)jetBuffer[2*i] != '\r')
+							fwprintf(dump,L"%c",(wchar_t)jetBuffer[2*i]);
+					break;
+				};
 
-		if(strcmp("ace",argv[1]))
+				if(strcmp("ace",argv[1]))
 					fprintf(dump,"\t");
-		}
 			}
+		}
 		if(strcmp("ace",argv[1]))
 			fprintf(dump,"\n");
 	}while(JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
 
 	// cleanup
 	printf("cleaning...\n");
-	
+
 	JetCloseTable(sesid, tableid);
 	JetEndSession(sesid, 0);
 	JetTerm(instance);
