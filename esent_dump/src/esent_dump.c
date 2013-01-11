@@ -522,7 +522,7 @@ int main(int argc, char * argv[]) {
 			if(ValidateColumn(argv[1], columnList->name))
 			{
 				err = JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
-				if (err != 0 && err != 1006 && err != 1004)
+				if (err < 0 && err != -1047)
 				{
 					printf("JetRetrieveColumn : %i, jetSize : %d\n", err, jetSize);
 					exit(-1);
