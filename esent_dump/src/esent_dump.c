@@ -36,6 +36,7 @@ knowledge of the CeCILL license and that you accept its terms.
 
 // define JET_VERSION to be at least 0x0501 to get access to  JetCreateInstance. That means this
 // program will run on Windows XP and up (Windows Server 2003 and up).
+// Though XP will probably have trouble to open databases, especially from later OS versions
 
 
 #undef JET_VERSION
@@ -65,7 +66,8 @@ knowledge of the CeCILL license and that you accept its terms.
 //Global var for exchange SD column name, depends on schema
 char exchangeMailboxSDCol[32]="ATTp";
 
-
+#define NAME_SIZE 256
+#define JET_BUFFER_SIZE 65536
 
 void PrintUsage()
 {
@@ -168,31 +170,28 @@ void DumpACE(
 
 	BOOL daclPresent, daclDefaulted;
 	PACL dacl;
-	LPWSTR stringOwner = NULL;
-	LPWSTR stringGroup = NULL;
+
 	PSID owner, group;
 	BOOL ownerDefaulted, groupDefaulted;
 	LPVOID ace;
+
+	LPWSTR stringOwner = NULL;
+	LPWSTR stringGroup = NULL;
 	LPWSTR stringTrustee = NULL;
-	LPWSTR OTGuid, IOTGuid;
+	RPC_WSTR OTGuid = NULL;
+	RPC_WSTR IOTGuid = NULL;
+
 	unsigned int i;
 
 
-	owner = (PSID)malloc(sizeof(SID));
 	GetSecurityDescriptorOwner(buffer, &owner, &ownerDefaulted);
 	ConvertSidToStringSid(owner, &stringOwner);
 
-	group = (PSID)malloc(sizeof(SID));
 	GetSecurityDescriptorGroup(buffer, &group, &groupDefaulted);
 	ConvertSidToStringSid(group, &stringGroup);
 
-
-	dacl = (PACL)malloc(sizeof(ACL));
 	GetSecurityDescriptorDacl(buffer, &daclPresent, &dacl, &daclDefaulted);
 
-	//stringTrustee = (LPWSTR)malloc(64);
-	OTGuid = (LPWSTR)malloc(MAX_GUID_LENGTH);
-	IOTGuid = (LPWSTR)malloc(MAX_GUID_LENGTH);
 
 	for(i = 0 ; GetAce(dacl, i, &ace) ; i++)
 	{
@@ -201,8 +200,6 @@ void DumpACE(
 		{
 			fwprintf(dump,L"\n");			
 			
-
-
 			//Standard allow&deny ACE
 			if(((ACE_HEADER *)ace)->AceType < 0x5)
 			{	
@@ -237,7 +234,7 @@ void DumpACE(
 					//Only OT
 				case 0x1:
 					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), (RPC_WSTR *)&OTGuid);
+						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
 						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
 							&stringTrustee
 							);
@@ -247,7 +244,7 @@ void DumpACE(
 					//Only IOT
 				case 0x2:
 					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), (RPC_WSTR *)&IOTGuid);
+						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
 						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
 							&stringTrustee
 							);
@@ -258,8 +255,8 @@ void DumpACE(
 					//both
 				case 0x3:
 					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), (RPC_WSTR *)&OTGuid);
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), (RPC_WSTR *)&IOTGuid);
+						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
+						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
 						ConvertSidToStringSid((PSID)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart), 
 							&stringTrustee
 							);
@@ -284,6 +281,12 @@ void DumpACE(
 			LocalFree(stringTrustee);
 			stringTrustee = NULL;
 
+			RpcStringFree(&OTGuid);
+				OTGuid = NULL;
+				
+			RpcStringFree(&IOTGuid);
+				IOTGuid = NULL;
+
 		}	
 
 	}
@@ -306,14 +309,12 @@ int main(int argc, char * argv[]) {
 	typedef	struct _COLUMNLIST {
 		int type;
 		int id;
-		char name[16];
+		char name[NAME_SIZE];
 		struct _COLUMNLIST * next;
 	}COLUMNLIST;
 
 	COLUMNLIST *columnList;
 	COLUMNLIST *listHead = (COLUMNLIST *)malloc(sizeof(COLUMNLIST));
-
-
 
 	JET_ERR err;
 	JET_INSTANCE instance = JET_instanceNil;
@@ -321,20 +322,35 @@ int main(int argc, char * argv[]) {
 	JET_DBID dbid;
 	JET_TABLEID tableid ;
 
+	/*
 	JET_COLUMNDEF *columndefid = malloc(sizeof(JET_COLUMNDEF));
 	JET_COLUMNDEF *columndeftype = malloc(sizeof(JET_COLUMNDEF));
 	JET_COLUMNDEF *columndeftypecol = malloc(sizeof(JET_COLUMNDEF));
 	JET_COLUMNDEF *columndefname = malloc(sizeof(JET_COLUMNDEF));
 	JET_COLUMNDEF *columndefobjid = malloc(sizeof(JET_COLUMNDEF));
+	*/
+
+	JET_COLUMNDEF _columndefid;
+	JET_COLUMNDEF _columndeftype;
+	JET_COLUMNDEF _columndeftypecol;
+	JET_COLUMNDEF _columndefname;
+	JET_COLUMNDEF _columndefobjid;
+
+	JET_COLUMNDEF *columndefid = &_columndefid;
+	JET_COLUMNDEF *columndeftype = &_columndeftype;
+	JET_COLUMNDEF *columndeftypecol = &_columndeftypecol;
+	JET_COLUMNDEF *columndefname = &_columndefname;
+	JET_COLUMNDEF *columndefobjid = &_columndefobjid;
 
 	unsigned long a,b,c,d,e;
 	long bufferid[16];
 	char buffertype[256];
 	char buffertypecol[8];
-	char buffername[256];
+	char buffername[NAME_SIZE];
 	long bufferobjid[8];
 
-	unsigned char *jetBuffer;
+	//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
+	unsigned char jetBuffer[JET_BUFFER_SIZE];
 	unsigned long jetSize;
 
 	char *baseName = argv[2];
@@ -347,16 +363,13 @@ int main(int argc, char * argv[]) {
 	char dumpFileName[64];
 	//SYSTEMTIME lt;
 
-	LPWSTR Guid = (LPWSTR)malloc(MAX_GUID_LENGTH);
+	RPC_WSTR Guid = NULL;
 
 	LPWSTR stringSid = NULL;
 	long long sd_id = 0;
 
 	listHead->next = NULL;
 	columnList = listHead;
-
-	//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
-	jetBuffer = (unsigned char *)malloc(32768);
 
 	if( argc < 3)
 		PrintUsage();
@@ -476,6 +489,10 @@ int main(int argc, char * argv[]) {
 		{
 			unsigned int j;
 			columnList->next = (COLUMNLIST *)malloc(sizeof(COLUMNLIST));
+			if(!columnList->next) {
+				printf("Memory allocation failed during metadata dump\n");
+				return(-1);
+			}
 			columnList = columnList->next;
 			columnList->next = NULL;
 
@@ -522,18 +539,24 @@ int main(int argc, char * argv[]) {
 
 			if(ValidateColumn(argv[1], columnList->name))
 			{
-				//NOTE that this approach implies post processing multi valued columns if you re use this code...
+				//NOTE that this approach implies post processing multi valued columns if you re-use this code...
 				err = JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
 
+#ifdef _DEBUG 
 				//positive are warnings, -1047 is invalid buffer size which is expected here
-				if (err < 0 && err != -1047)
-				{
-					printf("JetRetrieveColumn error : %i, jetSize : %d, continuing anyway\n", err, jetSize);
-					continue;
+				if (err < 0 && err != -1047) {
+					printf("JetRetrieveColumn error : %i, jetSize : %d\n", err, jetSize);
+					return(-2);
 				}
+
+				if (jetSize > JET_BUFFER_SIZE) {
+					printf("Jet Buffer incorrect size preset: %d bytes are needed\n",jetSize);
+					return(-2);
+				}
+#endif
+
 			
-				//Actually max buffer size should depend on the page size but it doesn't. Further investigation required.
-				memset(jetBuffer,0,32768);
+				memset(jetBuffer,0,JET_BUFFER_SIZE);
 
 				switch(columnList->type) {
 					//signed int types
@@ -608,8 +631,10 @@ int main(int argc, char * argv[]) {
 					//Schema-Id-Guid
 					else if(!strcmp("sid",argv[1]) && !strcmp("ATTk589972",columnList->name) )
 					{
-						UuidToString((UUID *)jetBuffer, (RPC_WSTR *)&Guid);
+						UuidToString((UUID *)jetBuffer, &Guid);
 						fwprintf(dump,L"%s",Guid);
+						RpcStringFree(&Guid);
+						Guid = NULL;
 					}
 					else //hex dump
 						for(i=0;i<jetSize;i++)
