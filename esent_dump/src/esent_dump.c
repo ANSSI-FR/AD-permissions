@@ -204,7 +204,7 @@ void DumpACE(
 			if(((ACE_HEADER *)ace)->AceType < 0x5)
 			{	
 				ConvertSidToStringSid((PSID)&(((ACCESS_ALLOWED_ACE *)ace)->SidStart), &stringTrustee);
-				fwprintf(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t\t\t\t%s",
+				fwprintf_s(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t\t\t\t%s",
 					sd_id,
 					stringOwner,
 					stringGroup,
@@ -226,8 +226,6 @@ void DumpACE(
 						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - 2 * sizeof(GUID)), 
 							&stringTrustee
 							);
-						wcsncpy_s(OTGuid, MAX_GUID_LENGTH, L"",2);
-						wcsncpy_s(IOTGuid, MAX_GUID_LENGTH, L"",2);
 						break;
 					}
 
@@ -238,7 +236,6 @@ void DumpACE(
 						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
 							&stringTrustee
 							);
-						wcsncpy_s(IOTGuid, MAX_GUID_LENGTH, L"",2);
 						break;
 					}
 					//Only IOT
@@ -248,7 +245,6 @@ void DumpACE(
 						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
 							&stringTrustee
 							);
-						wcsncpy_s(OTGuid, MAX_GUID_LENGTH, L"",2);
 						break;
 
 					}
@@ -264,7 +260,7 @@ void DumpACE(
 					}
 				}
 
-				fwprintf(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t%d\t%s\t%s\t%s",
+				fwprintf_s(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t%d\t%s\t%s\t%s",
 					sd_id,
 					stringOwner,
 					stringGroup,
