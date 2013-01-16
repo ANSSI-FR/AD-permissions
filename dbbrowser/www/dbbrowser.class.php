@@ -450,7 +450,10 @@ class DBBrowser
 		
 		$_SESSION[$scid.'_shown_fields'] = $this->shown_fields;
 		foreach(array_keys($this->shown_fields) as $key) {
-			$this->shown_fields_tmp[$key] = '`' . $this->shown_fields[$key] . '`';
+			if(strstr($key, "COUNT(*) as count_") !== FALSE)
+				$this->shown_fields_tmp[$key] = $this->shown_fields[$key];
+			else
+				$this->shown_fields_tmp[$key] = '`' . $this->shown_fields[$key] . '`';
 		}
 		$this->fields_str = implode(',',$this->shown_fields_tmp);
 	}
@@ -823,7 +826,10 @@ class DBBrowser
 			$this->setStart();
 		}
 		else if(isset($_GET['quick_filter']) && isset($_GET['quick_value'])) {
-			$this->quick_filter = "`".$_GET['quick_filter']."`";
+			if(strstr($_GET['quick_filter'], "COUNT(*) as count_") !== FALSE)
+				$this->quick_filter = $_GET['quick_filter'];
+			else
+				$this->quick_filter = "`".$_GET['quick_filter']."`";
 			$this->quick_value = $_GET['quick_value'];
 			$_SESSION[$scid.'_quick_filter'] = "`".$_GET['quick_filter']."`";
 			$_SESSION[$scid.'_quick_value'] = $_GET['quick_value'];
@@ -845,6 +851,8 @@ class DBBrowser
 
 	function setQuickFilterStr()
 	{
+		global $logtable;
+		
 		if(isset($this->quick_filter) && isset($this->quick_value) && !empty($this->quick_filter)/* && !empty($this->quick_value)*/) {
 			if(!empty($this->quick_value))
 				$wildchar = '%';
@@ -854,7 +862,7 @@ class DBBrowser
 
 
 			$type = "LIKE";
-			$result = mysql_query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME = ' " . $logtable . "' AND COLUMN_NAME = '" . $this->quick_filter . "'");
+			$result = mysql_query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME = '" . $logtable . "' AND COLUMN_NAME = '" . $this->quick_filter . "'");
 			if (!$result) {
 				echo 'Could not run query: ' . mysql_error();
 				exit;
