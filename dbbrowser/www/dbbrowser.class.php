@@ -804,8 +804,15 @@ class DBBrowser
 	
 	function setGlobalFilterStr()
 	{
-		if(isset($this->global_filters) && is_array($this->global_filters))
-			$this->global_filters_str = implode(" AND ", $this->global_filters);
+		if(isset($this->global_filters) && is_array($this->global_filters)) {
+			$tmp = array();
+			foreach($this->global_filters as $gf) {
+				if(strstr($gf, "`count_") !== FALSE)
+					continue;
+				$tmp[] = $gf;
+			}
+			$this->global_filters_str = implode(" AND ", $tmp);
+		}
 	}
 	
 	function getGlobalFilterStr()
@@ -826,7 +833,7 @@ class DBBrowser
 			$this->setStart();
 		}
 		else if(isset($_GET['quick_filter']) && isset($_GET['quick_value'])) {
-			if(strstr($_GET['quick_filter'], "COUNT(*) as count_") !== FALSE)
+			if(strstr($_GET['quick_filter'], "count_") !== FALSE)
 				$this->quick_filter = $_GET['quick_filter'];
 			else
 				$this->quick_filter = "`".$_GET['quick_filter']."`";
@@ -859,7 +866,7 @@ class DBBrowser
 			else
 				$wildchar = '';
 				
-
+	
 
 			$type = "LIKE";
 			$result = mysql_query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME = '" . $logtable . "' AND COLUMN_NAME = '" . $this->quick_filter . "'");
@@ -887,6 +894,8 @@ class DBBrowser
 				$this->filter = $prefix.mysql_real_escape_string($this->quick_filter, $this->cid) . " ".$type." '". $wildchar . basename(str_replace('\\', '/', $this->quick_value)) . $wildchar."'";
 			else if($this->quick_filter == "fname" || $this->quick_filter == "path")
 				$this->filter = $prefix.mysql_real_escape_string($this->quick_filter, $this->cid) . " ".$type." '". $wildchar . basename(str_replace('\\', '%', $this->quick_value)) . $wildchar."'";
+			//else if(strstr($this->quick_filter, "count_") !== FALSE)
+			//	$this->filter = "";
 			else
 				$this->filter = $prefix.mysql_real_escape_string($this->quick_filter, $this->cid) . " ".$type." '".$wildchar . str_replace(':', '%', mysql_real_escape_string($this->quick_value, $this->cid)) . $wildchar."'";
 		}
@@ -902,6 +911,9 @@ class DBBrowser
 	function getFilterStr()
 	{
 		$s1 = $this->getQuickFilterStr();
+		if(strstr($this->quick_filter, "count_") !== FALSE)
+			$s1 = "";
+		
 		$s2 = $this->getGlobalFilterStr();
 		$f = array();
 		if(!empty($s1))
@@ -979,6 +991,21 @@ class DBBrowser
 			} else {
 				//$having = " HAVING (SUBSTRING(win32_ctime,12,2) BETWEEN '00' AND '06') OR (SUBSTRING(mft_ctime,12,2) BETWEEN '00' AND '06') ";
 				$having = "";
+				$tmphv = array();
+				if(isset($this->global_filters) && is_array($this->global_filters)) {
+					foreach($this->global_filters as $gf) {
+						if(strstr($gf, "`count_") === FALSE)
+							continue;
+						$tmphv[] = $gf;
+					}
+				}
+				
+				if(strstr($this->quick_filter, "count_") !== FALSE)
+					$tmphv[] = "`" . mysql_real_escape_string($this->quick_filter, $this->cid) ."` = '".mysql_real_escape_string($this->quick_value,$this->cid)."'";
+				
+				if(count($tmphv) > 0)
+					$having = " HAVING " . implode(" AND ", $tmphv) . " " ;
+				
 				$append = $join_str . $this->getFilterStr() . $groupby_str . $having . $this->getSortStr();
 				$append2 = $join_str . $this->getFilterStr() . $groupby_str . $having . $this->getSortStr() . $this->getLimitStr();
 			}
