@@ -41,7 +41,7 @@ echo "arg3: $3" >> /tmp/cleanup.log
 
 #gawk -F'<listAce>' -v RS='</listAce>' 'RT{print $NF}' $2 > "$1/work.txt"
 #iconv -f WINDOWS-1252 -t UTF-8 -o "$1/work2.txt" "$1/work.txt"
-dos2unix "$2"
+dos2unix -f "$2"
 iconv -f WINDOWS-1252 -t UTF-8 -o "$1/work2.txt" "$2"
 mv $1/work2.txt $1/work.txt
 sed -e "s/\\\/\\\\\\\/g" -e "s///g" -e "s///g" -i "$1/work.txt"
