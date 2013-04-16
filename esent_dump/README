@@ -1,9 +1,22 @@
-Use at your own risk. You don't need to execute this on a DC!
+Use at your own risk. The tool does not require launching on a DC!
 
 
 This will dump the Active Directory table in tsv format, from an offline
 NTDS.dit file. This contains an ESENT (Extensible Storage Engine) database.
-Ways to grab this file are vssadmin (win2k3/win2k8) or ntbackup (win2k).
+Clean ways to grab this file are ntdsutil (2008 or later), vssadmin (win2k3 or later) or ntbackup (win2k). 
+Ntdsutil is the best option, with the NTDS writer for VSS. It ensures a clean applicative shutdown of the database. Raw imaging with VSS only recovers ESENT consistency.
+Open an admin cmd. Then:
+
+1st option:
+ntdsutil
+activate instance NTDS
+snapshot
+create
+list all
+mount <n°>
+copy C:\$SNAP_.....\Windows\NTDS\ntds.dit .
+
+2nd option:
 "vssadmin create shadow /for=C:"
 then copy .dit, .log, .chk, .edb and .jrs files from snapshot path
 finally commit the logged operations to get a clean base:
