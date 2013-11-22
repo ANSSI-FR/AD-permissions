@@ -33,6 +33,25 @@ The fact that you are presently reading this means that you have had
 knowledge of the CeCILL license and that you accept its terms.
 */
 
+//Linked list to contain the datatable columns metadata
+
+#define NAME_SIZE 256
+#define JET_BUFFER_SIZE 1000000
+
+typedef	struct _COLUMNLIST {
+		int type;
+		int id;
+		char name[NAME_SIZE];
+		struct _COLUMNLIST * next;
+}COLUMNLIST;
+
+//Backward Linked list to contain ancestors names needed to rebuild the DN bottom-up
+typedef struct _ANCESTORSLIST {
+	int DNT;
+	wchar_t* DN;
+	struct _ANCESTORSLIST * prev;
+}ANCESTORSLIST;
+
 //ATT to LDAP display names dictionary
 unsigned char * translateATT(
 	IN unsigned char * columnListName
@@ -53,3 +72,21 @@ void DumpACE(
 			 IN FILE *dump
 				);
 
+/* Resolve ancestors to build DN
+*
+*/
+wchar_t* DNFromAncestors(
+	IN int PDNT, 
+	IN ANCESTORSLIST* ancestorsList
+	);
+
+/* Updates ancestors list
+*
+*/
+ANCESTORSLIST* UpdateAncestorsList(
+	INT DNT,
+	wchar_t* DN,
+	int RDNtyp,
+	wchar_t* Name,
+	ANCESTORSLIST* ancestorsList
+	);

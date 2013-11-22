@@ -66,8 +66,7 @@ knowledge of the CeCILL license and that you accept its terms.
 //Global var for exchange SD column name, depends on schema
 char exchangeMailboxSDCol[32]="ATTp";
 
-#define NAME_SIZE 256
-#define JET_BUFFER_SIZE 65536
+
 
 void PrintUsage()
 {
@@ -90,6 +89,12 @@ unsigned char * translateATT(
 {
 	if(!strcmp(columnListName, exchangeMailboxSDCol))
 		return "ms-Exch-Mailbox-Security-Descriptor";
+	if(!strcmp(columnListName, "DNT_col"))
+		return "DNT_col";
+	if(!strcmp(columnListName, "PDNT_col"))
+		return "PDNT_col";
+	if(!strcmp(columnListName, "RDNtyp_col"))
+		return "RDNtyp_col";
 
 	switch(atoi(columnListName + 4)) {
 	case 3: 
@@ -98,6 +103,10 @@ unsigned char * translateATT(
 		return "Organizational-Unit-Name";
 	case 1376281:
 		return "Domain-Component";
+	case 10:
+		return "Organization-Name";
+	case 589825:
+		return "RDN";
 	case 131532:
 		return "LDAP-Display-Name";
 	case 590480:
@@ -146,7 +155,19 @@ int ValidateColumn(
 {
 	if(!strcmp("ad",main_arg)
 		|| (!strcmp("ace",main_arg) && (!strcmp("sd_value",columnListName) || !strcmp("sd_id",columnListName)))
-		|| (!strcmp("sid",main_arg) && (!strcmp("ATTp131353",columnListName) || !strcmp("ATTr589970",columnListName) || !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTk589972",columnListName) || !strcmp("ATTb590606",columnListName) || !strcmp("ATTm590164",columnListName) || !strcmp(exchangeMailboxSDCol,columnListName)))
+
+		|| (!strcmp("sid",main_arg) && (
+		//ntsd, object-sid, schema-id-guid
+		!strcmp("ATTp131353",columnListName) || !strcmp("ATTr589970",columnListName) || !strcmp("ATTk589972",columnListName)
+		//object-category, rights-guid
+		|| !strcmp("ATTb590606",columnListName) || !strcmp("ATTm590164",columnListName) || !strcmp(exchangeMailboxSDCol,columnListName)
+		//CN,OU,DC,O
+		//|| !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTm1376281",columnListName) || !strcmp("ATTm10",columnListName)
+		//RDN
+		|| !strcmp("ATTm589825",columnListName)
+		|| !strcmp("RDNtyp_col",columnListName) || !strcmp("PDNT_col",columnListName) || !strcmp("DNT_col",columnListName)
+		))
+
 		|| (!strcmp("att",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTc131102",columnListName) || !strcmp("ATTj591540",columnListName)))
 		|| (!strcmp("cat",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTb590607",columnListName)))
 		)
@@ -296,21 +317,88 @@ void DumpACE(
 }
 
 
+/* Resolve ancestors to build DN
+*
+*/
+wchar_t* DNFromAncestors(
+	IN int PDNT, 
+	IN ANCESTORSLIST* ancestorsList
+	) 
+{
+	ANCESTORSLIST* currentAncestor = ancestorsList;
+	while(currentAncestor->DNT != PDNT && currentAncestor->prev)
+		currentAncestor = currentAncestor->prev;
+	
+	return currentAncestor->DN;
+}
+
+/* Updates ancestors list
+*
+*/
+ANCESTORSLIST* UpdateAncestorsList(
+	INT DNT,
+	wchar_t* DN,
+	int RDNtyp,
+	wchar_t* Name,
+	ANCESTORSLIST* ancestorsList
+	) 
+{
+	
+	wchar_t* prefix;
+	size_t DNLength;
+	ANCESTORSLIST* newAncestors = (ANCESTORSLIST *)malloc(sizeof(ANCESTORSLIST));
+	if(!newAncestors) {
+		printf("Memory allocation failed during ancestorsList update\n");
+		exit(-1);
+	}
+
+	newAncestors->prev = ancestorsList;
+	newAncestors->DNT = DNT;
+
+	switch(RDNtyp) {
+		case 3:
+			prefix = L"CN=";
+			break;
+		case 10:
+			prefix = L"O=";
+			break;
+		case 11:
+			prefix = L"OU=";
+			break;
+		case 1376281:
+			prefix = L"DC=";
+			break;
+		default:
+			prefix = L"??=";
+			break;
+	}
+	DNLength = wcslen(Name) + wcslen(prefix) + 1 + wcslen(DN) + 1;
+	newAncestors->DN = (wchar_t *)malloc(DNLength * sizeof(wchar_t));
+	if(!newAncestors->DN) 
+	{
+		printf("Memory allocation failed during DN\n");
+		exit(-1);
+	}
+	if(wcslen(DN) > 0)
+		swprintf_s(newAncestors->DN, DNLength, L"%s%s,%s", prefix, Name, DN);
+	else
+		swprintf_s(newAncestors->DN, DNLength, L"%s%s", prefix, Name);
+	return newAncestors;
+}
 
 
 
 int main(int argc, char * argv[]) {
 
-	//Linked list to contain the datatable columns metadata
-	typedef	struct _COLUMNLIST {
-		int type;
-		int id;
-		char name[NAME_SIZE];
-		struct _COLUMNLIST * next;
-	}COLUMNLIST;
 
-	COLUMNLIST *columnList;
+	COLUMNLIST *columnList = NULL;
 	COLUMNLIST *listHead = (COLUMNLIST *)malloc(sizeof(COLUMNLIST));
+
+	ANCESTORSLIST *ancestorsList = (ANCESTORSLIST *)malloc(sizeof(ANCESTORSLIST));
+
+	int PDNT, DNT, RDNtyp;
+	wchar_t* DN = L"toto";
+	wchar_t Name[256];
 
 	JET_ERR err;
 	JET_INSTANCE instance = JET_instanceNil;
@@ -318,13 +406,6 @@ int main(int argc, char * argv[]) {
 	JET_DBID dbid;
 	JET_TABLEID tableid ;
 
-	/*
-	JET_COLUMNDEF *columndefid = malloc(sizeof(JET_COLUMNDEF));
-	JET_COLUMNDEF *columndeftype = malloc(sizeof(JET_COLUMNDEF));
-	JET_COLUMNDEF *columndeftypecol = malloc(sizeof(JET_COLUMNDEF));
-	JET_COLUMNDEF *columndefname = malloc(sizeof(JET_COLUMNDEF));
-	JET_COLUMNDEF *columndefobjid = malloc(sizeof(JET_COLUMNDEF));
-	*/
 
 	JET_COLUMNDEF _columndefid;
 	JET_COLUMNDEF _columndeftype;
@@ -366,6 +447,10 @@ int main(int argc, char * argv[]) {
 
 	listHead->next = NULL;
 	columnList = listHead;
+
+	ancestorsList->prev = NULL;
+	ancestorsList->DN = L"";
+	ancestorsList->DNT = 2;
 
 	if( argc < 3)
 		PrintUsage();
@@ -521,13 +606,16 @@ int main(int argc, char * argv[]) {
 			if(ValidateColumn(argv[1], columnList->name))
 				fprintf(dump, "%s\t", translateATT(columnList->name));
 	};
-	fprintf(dump,"\n");
+	fprintf(dump,"Distinguished-Name\n");
 
 	printf("Dumping content...\n");
 
 	JetMove(sesid, tableid, JET_MoveFirst, 0);
 	do
 	{
+		DNT = 0;
+		PDNT = 0;
+		RDNtyp = 0;
 		columnList = listHead;
 		while(columnList->next)
 		{
@@ -558,7 +646,15 @@ int main(int argc, char * argv[]) {
 					//signed int types
 				case 4:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					//DNT
+					if(!strcmp("DNT_col",columnList->name))
+						DNT = *(int *)jetBuffer;
+					if(!strcmp("PDNT_col",columnList->name))
+						PDNT = *(int *)jetBuffer;
+					if(!strcmp("RDNtyp_col",columnList->name))
+						RDNtyp = *(int *)jetBuffer;
 					//Specific useraccountcontrol code, currently dead code
+					/*
 					if(!strcmp("users",argv[1]) && !strcmp("ATTj589832",columnList->name))
 					{
 						if(jetBuffer[0] & ADS_UF_ACCOUNTDISABLE)
@@ -571,6 +667,7 @@ int main(int argc, char * argv[]) {
 							fprintf(dump,"reversiblepwd ");
 					}
 					else
+						*/
 						fprintf(dump,"%d",*(int *)jetBuffer);
 					/*
 					fprintf(dump,"%u_",*(unsigned int *)jetBuffer);
@@ -649,8 +746,13 @@ int main(int argc, char * argv[]) {
 				case 10:
 				case 12:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
+					//CN/OU/O/DC
+					if(jetSize && !strcmp("ATTm589825",columnList->name))
+						//!strcmp("ATTm3",columnList->name) || !strcmp("ATTm10",columnList->name) ||!strcmp("ATTm11",columnList->name) ||!strcmp("ATTm1376281",columnList->name) ))
+						wcscpy_s(Name, 256, (wchar_t*)jetBuffer);
+
 					for(i=0;i<jetSize/2;i++)
-						if((wchar_t)jetBuffer[2*i] != '\t' || (wchar_t)jetBuffer[2*i] != '\n' || (wchar_t)jetBuffer[2*i] != '\r')
+						if((wchar_t)jetBuffer[2*i] != '\t' && (wchar_t)jetBuffer[2*i] != '\n' && (wchar_t)jetBuffer[2*i] != '\r')
 							fwprintf(dump,L"%c",(wchar_t)jetBuffer[2*i]);
 					break;
 				};
@@ -659,6 +761,17 @@ int main(int argc, char * argv[]) {
 					fprintf(dump,"\t");
 			}
 		}
+
+		//Resolve DN and add DNT to ancestors chain
+		if(DNT >= 4)
+		{			
+			DN = DNFromAncestors(PDNT, ancestorsList);
+			//wprintf(L"Name: %s, PDNT: %d, DNT: %d, ancestors DN: %s\n",Name, PDNT, DNT, DN);
+			ancestorsList = UpdateAncestorsList(DNT, DN, RDNtyp, Name, ancestorsList);
+		}
+		fwprintf(dump,L"%s",ancestorsList->DN);
+
+		//DumpACE generates its own newlines
 		if(strcmp("ace",argv[1]))
 			fprintf(dump,"\n");
 	}while(JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
