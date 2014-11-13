@@ -42,7 +42,7 @@ considered field.
 
 Typical use case is to browse results and "surf" from one field to another: say
 you are looking at a user's mailbox, and put a quick filter for that user (i.e.
-clicked on his name in the CommonName column). Seeing what other mailboxes his
+clicked on his name in the DistinguishedName column). Seeing what other mailboxes his
 trustees can also access is just one click away: just click on the trustee name 
 in the TrusteeSID or TrusteeCN column, and you will switch to that view.
 

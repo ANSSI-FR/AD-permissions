@@ -113,12 +113,12 @@ echo "CREATE TABLE IF NOT EXISTS \`GUID\` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 INSERT INTO GUID(\`value\`,\`text\`)
-SELECT \`Rights-Guid\`, \`Common-Name\` 
+SELECT \`Rights-Guid\`, \`Distinguished-Name\` 
 FROM $table_sid WHERE \`Rights-Guid\` IS NOT NULL 
 	AND \`Rights-Guid\` != '';
 
 INSERT INTO GUID(\`value\`,\`text\`)
-SELECT \`Schema-ID-Guid\`, \`Common-Name\` 
+SELECT \`Schema-ID-Guid\`, \`Distinguished-Name\` 
 FROM $table_sid WHERE \`Schema-ID-Guid\` IS NOT NULL 
 	AND \`Schema-ID-Guid\` != '0'
 	AND \`Schema-ID-Guid\` != '00000000-0000-0000-0000-000000000000';" > ./tmp/guid.sql
@@ -134,7 +134,7 @@ echo "CREATE TABLE IF NOT EXISTS \`SID\` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO SID(\`LDAPDisplayName\`,\`ObjectSID\`)
-SELECT \`Common-Name\`, \`Object-SID\` 
+SELECT \`Distinguished-Name\`, \`Object-SID\` 
 FROM $table_sid WHERE \`Object-SID\` LIKE 'S-%';" > ./tmp/sid.sql
 
 mysql -u $login -p$pass $database < "./tmp/sid.sql"
@@ -143,13 +143,13 @@ mysql -u $login -p$pass $database < "./tmp/sid.sql"
 
 # MS Exchange-related table
 query_exch="INSERT INTO \`ACE_EXCH\` (
- \`CommonName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeCN\`
 )
 SELECT 
- S1.\`Common-Name\`,
+ S1.\`Distinguished-Name\`,
  S1.\`Organizational-Unit-Name\` AS \`OU\`,
  S1.\`Object-Category\`,
  S1.\`Object-SID\`,
@@ -170,13 +170,13 @@ LEFT OUTER JOIN SID S2 ON (S2.\`ObjectSID\` = A.\`TrusteeSID\`);"
 
 # MS Exchange-related table # FASTER VERSION (NO static TrusteeCN)
 query_exch_fast="INSERT INTO \`ACE_EXCH\` (
- \`CommonName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`
 )
 SELECT 
- S1.\`Common-Name\`,
+ S1.\`Distinguished-Name\`,
  S1.\`Organizational-Unit-Name\` AS \`OU\`,
  S1.\`Object-Category\`,
  S1.\`Object-SID\`,
@@ -195,13 +195,13 @@ LEFT OUTER JOIN $table_ace A ON (S1.\`ms-Exch-Mailbox-Security-Descriptor\` = A.
 
 # AD-related table
 query_ad="INSERT INTO \`ACE_AD\` (
- \`CommonName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeCN\`
 )
 SELECT 
- S1.\`Common-Name\`,
+ S1.\`Distinguished-Name\`,
  S1.\`Organizational-Unit-Name\` AS \`OU\`,
  S1.\`Object-Category\`,
  S1.\`Object-SID\`,
@@ -222,13 +222,13 @@ LEFT OUTER JOIN SID S2 ON (S2.\`ObjectSID\` = A.\`TrusteeSID\`);"
 
 # AD-related table # FASTER VERSION (NO static TrusteeCN)
 query_ad_fast="INSERT INTO \`ACE_AD\` (
- \`CommonName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`
 )
 SELECT 
- S1.\`Common-Name\`,
+ S1.\`Distinguished-Name\`,
  S1.\`Organizational-Unit-Name\` AS \`OU\`,
  S1.\`Object-Category\`,
  S1.\`Object-SID\`,

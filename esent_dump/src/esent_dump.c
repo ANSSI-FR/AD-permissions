@@ -7,16 +7,16 @@ This software is a computer program whose purpose is to retrieve Active
 Directory objects permissions from an ESENT database file.
 
 This software is governed by the CeCILL license under French law and
-abiding by the rules of distribution of free software.  You can  use, 
+abiding by the rules of distribution of free software.  You can  use,
 modify and/ or redistribute the software under the terms of the CeCILL
 license as circulated by CEA, CNRS and INRIA at the following URL
-"http://www.cecill.info". 
+"http://www.cecill.info".
 
 As a counterpart to the access to the source code and  rights to copy,
 modify and redistribute granted by the license, users are provided only
 with a limited warranty  and the software's author,  the holder of the
 economic rights,  and the successive licensors  have only  limited
-liability. 
+liability.
 
 In this respect, the user's attention is drawn to the risks associated
 with loading,  using,  modifying and/or developing or reproducing the
@@ -25,9 +25,9 @@ that may mean  that it is complicated to manipulate,  and  that  also
 therefore means  that it is reserved for developers  and  experienced
 professionals having in-depth computer knowledge. Users are therefore
 encouraged to load and test the software's suitability as regards their
-requirements in conditions enabling the security of their systems and/or 
-data to be ensured and,  more generally, to use and operate it in the 
-same conditions as regards security. 
+requirements in conditions enabling the security of their systems and/or
+data to be ensured and,  more generally, to use and operate it in the
+same conditions as regards security.
 
 The fact that you are presently reading this means that you have had
 knowledge of the CeCILL license and that you accept its terms.
@@ -64,7 +64,7 @@ knowledge of the CeCILL license and that you accept its terms.
 #include "esent_dump.h"
 
 //Global var for exchange SD column name, depends on schema
-char exchangeMailboxSDCol[32]="ATTp";
+char exchangeMailboxSDCol[32] = "ATTp";
 
 
 
@@ -77,7 +77,7 @@ void PrintUsage()
 	printf("\tace: dump the AD ACE from sd_table\n");
 	printf("\tcat: dump object categories number to description\n");
 	printf("\tad: dump the whole AD datatable\n");
-	exit(-1);	
+	exit(-1);
 }
 
 
@@ -87,17 +87,17 @@ unsigned char * translateATT(
 	IN unsigned char * columnListName
 	)
 {
-	if(!strcmp(columnListName, exchangeMailboxSDCol))
+	if (!strcmp(columnListName, exchangeMailboxSDCol))
 		return "ms-Exch-Mailbox-Security-Descriptor";
-	if(!strcmp(columnListName, "DNT_col"))
+	if (!strcmp(columnListName, "DNT_col"))
 		return "DNT_col";
-	if(!strcmp(columnListName, "PDNT_col"))
+	if (!strcmp(columnListName, "PDNT_col"))
 		return "PDNT_col";
-	if(!strcmp(columnListName, "RDNtyp_col"))
+	if (!strcmp(columnListName, "RDNtyp_col"))
 		return "RDNtyp_col";
 
-	switch(atoi(columnListName + 4)) {
-	case 3: 
+	switch (atoi(columnListName + 4)) {
+	case 3:
 		return "Common-Name";
 	case 11:
 		return "Organizational-Unit-Name";
@@ -111,7 +111,7 @@ unsigned char * translateATT(
 		return "LDAP-Display-Name";
 	case 590480:
 		return "User-Principal-Name";
-	case 131102: 
+	case 131102:
 		return "Attribute-ID";
 	case 591540:
 		return "msDS-IntId";
@@ -153,23 +153,23 @@ int ValidateColumn(
 	IN unsigned char *columnListName
 	)
 {
-	if(!strcmp("ad",main_arg)
-		|| (!strcmp("ace",main_arg) && (!strcmp("sd_value",columnListName) || !strcmp("sd_id",columnListName)))
+	if (!strcmp("ad", main_arg)
+		|| (!strcmp("ace", main_arg) && (!strcmp("sd_value", columnListName) || !strcmp("sd_id", columnListName)))
 
-		|| (!strcmp("sid",main_arg) && (
+		|| (!strcmp("sid", main_arg) && (
 		//ntsd, object-sid, schema-id-guid
-		!strcmp("ATTp131353",columnListName) || !strcmp("ATTr589970",columnListName) || !strcmp("ATTk589972",columnListName)
+		!strcmp("ATTp131353", columnListName) || !strcmp("ATTr589970", columnListName) || !strcmp("ATTk589972", columnListName)
 		//object-category, rights-guid
-		|| !strcmp("ATTb590606",columnListName) || !strcmp("ATTm590164",columnListName) || !strcmp(exchangeMailboxSDCol,columnListName)
+		|| !strcmp("ATTb590606", columnListName) || !strcmp("ATTm590164", columnListName) || !strcmp(exchangeMailboxSDCol, columnListName)
 		//CN,OU,DC,O
 		//|| !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTm1376281",columnListName) || !strcmp("ATTm10",columnListName)
 		//RDN
-		|| !strcmp("ATTm589825",columnListName)
-		|| !strcmp("RDNtyp_col",columnListName) || !strcmp("PDNT_col",columnListName) || !strcmp("DNT_col",columnListName)
+		|| !strcmp("ATTm589825", columnListName)
+		|| !strcmp("RDNtyp_col", columnListName) || !strcmp("PDNT_col", columnListName) || !strcmp("DNT_col", columnListName)
 		))
 
-		|| (!strcmp("att",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTc131102",columnListName) || !strcmp("ATTj591540",columnListName)))
-		|| (!strcmp("cat",main_arg) && (!strcmp("ATTm131532",columnListName) || !strcmp("ATTb590607",columnListName)))
+		|| (!strcmp("att", main_arg) && (!strcmp("ATTm131532", columnListName) || !strcmp("ATTc131102", columnListName) || !strcmp("ATTj591540", columnListName)))
+		|| (!strcmp("cat", main_arg) && (!strcmp("ATTm131532", columnListName) || !strcmp("ATTb590607", columnListName)))
 		)
 		return 1;
 	else
@@ -214,71 +214,71 @@ void DumpACE(
 	GetSecurityDescriptorDacl(buffer, &daclPresent, &dacl, &daclDefaulted);
 
 
-	for(i = 0 ; GetAce(dacl, i, &ace) ; i++)
+	for (i = 0; GetAce(dacl, i, &ace); i++)
 	{
 		//Remove inherited ACE
-		if((((ACE_HEADER *)ace)->AceFlags & INHERITED_ACE) != INHERITED_ACE)
+		if ((((ACE_HEADER *)ace)->AceFlags & INHERITED_ACE) != INHERITED_ACE)
 		{
-			fwprintf(dump,L"\n");			
-			
+			fwprintf(dump, L"\n");
+
 			//Standard allow&deny ACE
-			if(((ACE_HEADER *)ace)->AceType < 0x5)
-			{	
+			if (((ACE_HEADER *)ace)->AceType < 0x5)
+			{
 				ConvertSidToStringSid((PSID)&(((ACCESS_ALLOWED_ACE *)ace)->SidStart), &stringTrustee);
 				fwprintf_s(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t\t\t\t%s",
 					sd_id,
 					stringOwner,
 					stringGroup,
-					((ACE_HEADER *)ace)->AceType, 
-					((ACE_HEADER *)ace)->AceFlags, 
+					((ACE_HEADER *)ace)->AceType,
+					((ACE_HEADER *)ace)->AceFlags,
 					((ACCESS_ALLOWED_ACE *)ace)->Mask,
-					stringTrustee 
+					stringTrustee
 					);
 
 			}
 			//Object ACE
 			else
 			{
-				switch(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Flags)
+				switch (((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Flags)
 				{
 					//not any OT
 				case 0x0:
-					{
-						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - 2 * sizeof(GUID)), 
-							&stringTrustee
-							);
-						break;
-					}
+				{
+					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - 2 * sizeof(GUID)),
+						&stringTrustee
+						);
+					break;
+				}
 
 					//Only OT
 				case 0x1:
-					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
-						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
-							&stringTrustee
-							);
-						break;
-					}
+				{
+					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
+					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
+						&stringTrustee
+						);
+					break;
+				}
 					//Only IOT
 				case 0x2:
-					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
-						ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)), 
-							&stringTrustee
-							);
-						break;
+				{
+					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
+					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
+						&stringTrustee
+						);
+					break;
 
-					}
+				}
 					//both
 				case 0x3:
-					{
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
-						UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
-						ConvertSidToStringSid((PSID)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart), 
-							&stringTrustee
-							);
-						break;
-					}
+				{
+					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
+					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
+					ConvertSidToStringSid((PSID)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart),
+						&stringTrustee
+						);
+					break;
+				}
 				}
 
 				fwprintf_s(dump, L"%lld\t%s\t%s\t%.2X\t%.2X\t%d\t%d\t%s\t%s\t%s",
@@ -287,11 +287,11 @@ void DumpACE(
 					stringGroup,
 					((ACE_HEADER *)ace)->AceType,
 					((ACE_HEADER *)ace)->AceFlags,
-					((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Mask, 
+					((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Mask,
 					((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Flags,
 					OTGuid,
 					IOTGuid,
-					stringTrustee 
+					stringTrustee
 					);
 			}
 
@@ -299,12 +299,12 @@ void DumpACE(
 			stringTrustee = NULL;
 
 			RpcStringFree(&OTGuid);
-				OTGuid = NULL;
-				
-			RpcStringFree(&IOTGuid);
-				IOTGuid = NULL;
+			OTGuid = NULL;
 
-		}	
+			RpcStringFree(&IOTGuid);
+			IOTGuid = NULL;
+
+		}
 
 	}
 
@@ -321,14 +321,14 @@ void DumpACE(
 *
 */
 wchar_t* DNFromAncestors(
-	IN int PDNT, 
+	IN int PDNT,
 	IN ANCESTORSLIST* ancestorsList
-	) 
+	)
 {
 	ANCESTORSLIST* currentAncestor = ancestorsList;
-	while(currentAncestor->DNT != PDNT && currentAncestor->prev)
+	while (currentAncestor->DNT != PDNT && currentAncestor->prev)
 		currentAncestor = currentAncestor->prev;
-	
+
 	return currentAncestor->DN;
 }
 
@@ -341,13 +341,13 @@ ANCESTORSLIST* UpdateAncestorsList(
 	int RDNtyp,
 	wchar_t* Name,
 	ANCESTORSLIST* ancestorsList
-	) 
+	)
 {
-	
+
 	wchar_t* prefix;
 	size_t DNLength;
 	ANCESTORSLIST* newAncestors = (ANCESTORSLIST *)malloc(sizeof(ANCESTORSLIST));
-	if(!newAncestors) {
+	if (!newAncestors) {
 		printf("Memory allocation failed during ancestorsList update\n");
 		exit(-1);
 	}
@@ -355,31 +355,31 @@ ANCESTORSLIST* UpdateAncestorsList(
 	newAncestors->prev = ancestorsList;
 	newAncestors->DNT = DNT;
 
-	switch(RDNtyp) {
-		case 3:
-			prefix = L"CN=";
-			break;
-		case 10:
-			prefix = L"O=";
-			break;
-		case 11:
-			prefix = L"OU=";
-			break;
-		case 1376281:
-			prefix = L"DC=";
-			break;
-		default:
-			prefix = L"??=";
-			break;
+	switch (RDNtyp) {
+	case 3:
+		prefix = L"CN=";
+		break;
+	case 10:
+		prefix = L"O=";
+		break;
+	case 11:
+		prefix = L"OU=";
+		break;
+	case 1376281:
+		prefix = L"DC=";
+		break;
+	default:
+		prefix = L"??=";
+		break;
 	}
 	DNLength = wcslen(Name) + wcslen(prefix) + 1 + wcslen(DN) + 1;
 	newAncestors->DN = (wchar_t *)malloc(DNLength * sizeof(wchar_t));
-	if(!newAncestors->DN) 
+	if (!newAncestors->DN)
 	{
 		printf("Memory allocation failed during DN\n");
 		exit(-1);
 	}
-	if(wcslen(DN) > 0)
+	if (wcslen(DN) > 0)
 		swprintf_s(newAncestors->DN, DNLength, L"%s%s,%s", prefix, Name, DN);
 	else
 		swprintf_s(newAncestors->DN, DNLength, L"%s%s", prefix, Name);
@@ -404,7 +404,7 @@ int main(int argc, char * argv[]) {
 	JET_INSTANCE instance = JET_instanceNil;
 	JET_SESID sesid;
 	JET_DBID dbid;
-	JET_TABLEID tableid ;
+	JET_TABLEID tableid;
 
 
 	JET_COLUMNDEF _columndefid;
@@ -419,7 +419,7 @@ int main(int argc, char * argv[]) {
 	JET_COLUMNDEF *columndefname = &_columndefname;
 	JET_COLUMNDEF *columndefobjid = &_columndefobjid;
 
-	unsigned long a,b,c,d,e;
+	unsigned long a, b, c, d, e;
 	long bufferid[16];
 	char buffertype[256];
 	char buffertypecol[8];
@@ -452,21 +452,21 @@ int main(int argc, char * argv[]) {
 	ancestorsList->DN = L"";
 	ancestorsList->DNT = 2;
 
-	if( argc < 3)
+	if (argc < 3)
 		PrintUsage();
 
-	if(!strcmp(argv[1],"ad") || !strcmp(argv[1],"sid") || !strcmp(argv[1],"att") || !strcmp(argv[1],"cat") || !strcmp(argv[1],"users"))
+	if (!strcmp(argv[1], "ad") || !strcmp(argv[1], "sid") || !strcmp(argv[1], "att") || !strcmp(argv[1], "cat") || !strcmp(argv[1], "users"))
 		targetTable = "datatable";
-	else if(!strcmp(argv[1],"ace"))
+	else if (!strcmp(argv[1], "ace"))
 		targetTable = "sd_table";
 	else
 		PrintUsage();
 
-	if(!strcmp(argv[1],"sid"))
+	if (!strcmp(argv[1], "sid"))
 	{
 		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for msExchMailboxSecurityDescriptor, \nfound in 'esent_dump att' results)\n");
 		printf("Otherwise just input anything and press enter\n");
-		scanf_s("%s",&exchangeMailboxSDCol[4], 28);
+		scanf_s("%s", &exchangeMailboxSDCol[4], 28);
 	}
 
 	//Our result file, don't modify if you want to use auto import scripts from dbbrowser
@@ -480,7 +480,7 @@ int main(int argc, char * argv[]) {
 		return(-1);
 	}
 
-	if(!strcmp(argv[1],"ace"))
+	if (!strcmp(argv[1], "ace"))
 		fprintf(dump, "sd_id\tPrimaryOwner\tPrimaryGroup\tACEType\tACEFlags\tAccessMask\tFlags\tObjectType\tInheritedObjectType\tTrusteeSID\n");
 
 	// Initialize ESENT. 
@@ -494,7 +494,7 @@ int main(int argc, char * argv[]) {
 
 	err = JetBeginSession(instance, &sesid, 0, 0);
 
-	err = JetAttachDatabase(sesid, baseName, JET_bitDbReadOnly);	
+	err = JetAttachDatabase(sesid, baseName, JET_bitDbReadOnly);
 	if (err != 0)
 	{
 		printf("JetAttachDatabase : %i\n", err);
@@ -551,8 +551,8 @@ int main(int argc, char * argv[]) {
 
 		JetRetrieveColumn(sesid, tableid, columndefname->columnid, 0, 0, &c, 0, 0);
 		JetRetrieveColumn(sesid, tableid, columndefname->columnid, buffername, c, 0, 0, 0);
-		buffername[c]='\0';
-		if(datatableId == 0xffffffff && !strcmp(buffername, targetTable))
+		buffername[c] = '\0';
+		if (datatableId == 0xffffffff && !strcmp(buffername, targetTable))
 		{
 			//We found the target table in the metadata, pickup its id and make another pass
 			datatableId = bufferid[0];
@@ -566,24 +566,24 @@ int main(int argc, char * argv[]) {
 
 
 		//We got the correct type and table id, let's dump the column name and add it to the column list
-		if(buffertype[0] == 2 && bufferobjid[0] == datatableId) 
+		if (buffertype[0] == 2 && bufferobjid[0] == datatableId)
 		{
 			unsigned int j;
 			columnList->next = (COLUMNLIST *)malloc(sizeof(COLUMNLIST));
-			if(!columnList->next) {
+			if (!columnList->next) {
 				printf("Memory allocation failed during metadata dump\n");
 				return(-1);
 			}
 			columnList = columnList->next;
 			columnList->next = NULL;
 
-			for(j=0;j<c;j++)
+			for (j = 0; j < c; j++)
 				columnList->name[j] = buffername[j];
 			columnList->name[c] = '\0';
 			columnList->type = buffertypecol[0];
 			columnList->id = bufferid[0];
 		}
-	}while(JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
+	} while (JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
 
 	JetCloseTable(sesid, tableid);
 
@@ -597,16 +597,18 @@ int main(int argc, char * argv[]) {
 
 	printf("Dumping %s column names...\n", tableName);
 	columnList = listHead;
-	while(columnList->next)
+	while (columnList->next)
 	{
 		columnList = columnList->next;
-		if(!strcmp("ad",argv[1]))
-			fprintf(dump,"%d:%s\t",columnList->type,columnList->name);
+		if (!strcmp("ad", argv[1]))
+			fprintf(dump, "%d:%s\t", columnList->type, columnList->name);
 		else
-			if(ValidateColumn(argv[1], columnList->name))
+			if (ValidateColumn(argv[1], columnList->name))
 				fprintf(dump, "%s\t", translateATT(columnList->name));
 	};
-	fprintf(dump,"Distinguished-Name\n");
+	if (!strcmp("sid", argv[1]))
+		fprintf(dump, "Distinguished-Name");
+	fprintf(dump, "\n");
 
 	printf("Dumping content...\n");
 
@@ -617,11 +619,11 @@ int main(int argc, char * argv[]) {
 		PDNT = 0;
 		RDNtyp = 0;
 		columnList = listHead;
-		while(columnList->next)
+		while (columnList->next)
 		{
 			columnList = columnList->next;
 
-			if(ValidateColumn(argv[1], columnList->name))
+			if (ValidateColumn(argv[1], columnList->name))
 			{
 				//NOTE that this approach implies post processing multi valued columns if you re-use this code...
 				err = JetRetrieveColumn(sesid, tableid, columnList->id, 0, 0, &jetSize, 0, 0);
@@ -636,39 +638,39 @@ int main(int argc, char * argv[]) {
 				if (jetSize > JET_BUFFER_SIZE) {
 					printf("Jet Buffer incorrect size preset: %d bytes are needed\n",jetSize);
 					return(-2);
-				}
+			}
 #endif
 
-			
-				memset(jetBuffer,0,JET_BUFFER_SIZE);
 
-				switch(columnList->type) {
+				memset(jetBuffer, 0, JET_BUFFER_SIZE);
+
+				switch (columnList->type) {
 					//signed int types
 				case 4:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
 					//DNT
-					if(!strcmp("DNT_col",columnList->name))
+					if (!strcmp("DNT_col", columnList->name))
 						DNT = *(int *)jetBuffer;
-					if(!strcmp("PDNT_col",columnList->name))
+					if (!strcmp("PDNT_col", columnList->name))
 						PDNT = *(int *)jetBuffer;
-					if(!strcmp("RDNtyp_col",columnList->name))
+					if (!strcmp("RDNtyp_col", columnList->name))
 						RDNtyp = *(int *)jetBuffer;
 					//Specific useraccountcontrol code, currently dead code
 					/*
 					if(!strcmp("users",argv[1]) && !strcmp("ATTj589832",columnList->name))
 					{
-						if(jetBuffer[0] & ADS_UF_ACCOUNTDISABLE)
-							fprintf(dump,"disabled ");
-						if(jetBuffer[0] & ADS_UF_DONT_EXPIRE_PASSWD)
-							fprintf(dump,"dontexpire ");
-						if(jetBuffer[0] & ADS_UF_LOCKOUT)
-							fprintf(dump,"lockedout ");
-						if(jetBuffer[0] & ADS_UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED)
-							fprintf(dump,"reversiblepwd ");
+					if(jetBuffer[0] & ADS_UF_ACCOUNTDISABLE)
+					fprintf(dump,"disabled ");
+					if(jetBuffer[0] & ADS_UF_DONT_EXPIRE_PASSWD)
+					fprintf(dump,"dontexpire ");
+					if(jetBuffer[0] & ADS_UF_LOCKOUT)
+					fprintf(dump,"lockedout ");
+					if(jetBuffer[0] & ADS_UF_ENCRYPTED_TEXT_PASSWORD_ALLOWED)
+					fprintf(dump,"reversiblepwd ");
 					}
 					else
-						*/
-						fprintf(dump,"%d",*(int *)jetBuffer);
+					*/
+					fprintf(dump, "%d", *(int *)jetBuffer);
 					/*
 					fprintf(dump,"%u_",*(unsigned int *)jetBuffer);
 					for(unsigned int i=0;i<jetSize;i++)
@@ -678,16 +680,16 @@ int main(int argc, char * argv[]) {
 					//signed long long type
 				case 5:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-					if(!strcmp("sd_id",columnList->name))
+					if (!strcmp("sd_id", columnList->name))
 						sd_id = *(long long *)jetBuffer;
 					else
-						fprintf(dump,"%lld",*(long long *)jetBuffer);
+						fprintf(dump, "%lld", *(long long *)jetBuffer);
 					break;
 					//Raw binary types
 				case 9:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
-					for(i=0;i<jetSize;i++)
-						fprintf(dump,"%.2X",jetBuffer[i]);
+					for (i = 0; i < jetSize; i++)
+						fprintf(dump, "%.2X", jetBuffer[i]);
 					break;
 				case 11:
 					/* We check matches on security descriptor, then SID
@@ -695,12 +697,12 @@ int main(int argc, char * argv[]) {
 					*/
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
 
-					if(!strcmp("sd_value",columnList->name) && IsValidSecurityDescriptor(jetBuffer))
+					if (!strcmp("sd_value", columnList->name) && IsValidSecurityDescriptor(jetBuffer))
 					{
 						//Correct sd_id because sd_id column is before sd_value column in sd_table
 						DumpACE(sd_id, jetBuffer, dump);
 					}
-					else if(!strcmp("ATTr589970",columnList->name) && IsValidSid(jetBuffer))
+					else if (!strcmp("ATTr589970", columnList->name) && IsValidSid(jetBuffer))
 					{
 						//AD SID storage swaps endianness in RID bytes (yeah !) 
 						unsigned char temp;
@@ -717,21 +719,21 @@ int main(int argc, char * argv[]) {
 						stringSid = NULL;
 					}
 					//NT Security Descriptor index to lookup in sd_table
-					else if(!strcmp("sid",argv[1]) && ( !strcmp("ATTp131353",columnList->name) || !strcmp(exchangeMailboxSDCol,columnList->name) ))
+					else if (!strcmp("sid", argv[1]) && (!strcmp("ATTp131353", columnList->name) || !strcmp(exchangeMailboxSDCol, columnList->name)))
 					{
-						fprintf(dump,"%d",*(int *)jetBuffer);
+						fprintf(dump, "%d", *(int *)jetBuffer);
 					}
 					//Schema-Id-Guid
-					else if(!strcmp("sid",argv[1]) && !strcmp("ATTk589972",columnList->name) )
+					else if (!strcmp("sid", argv[1]) && !strcmp("ATTk589972", columnList->name))
 					{
 						UuidToString((UUID *)jetBuffer, &Guid);
-						fwprintf(dump,L"%s",Guid);
+						fwprintf(dump, L"%s", Guid);
 						RpcStringFree(&Guid);
 						Guid = NULL;
 					}
 					else //hex dump
-						for(i=0;i<jetSize;i++)
-							fprintf(dump,"%.2X",jetBuffer[i]);
+						for (i = 0; i < jetSize; i++)
+							fprintf(dump, "%.2X", jetBuffer[i]);
 
 					/* dumping type 11 as int (?)
 						else
@@ -740,41 +742,43 @@ int main(int argc, char * argv[]) {
 						printf("dump type 11 as int : %d\n", *(int *)jetBuffer);
 						}
 						*/
-						
+
 					break;
 					//widechar text types
 				case 10:
 				case 12:
 					JetRetrieveColumn(sesid, tableid, columnList->id, jetBuffer, jetSize, 0, 0, 0);
 					//CN/OU/O/DC
-					if(jetSize && !strcmp("ATTm589825",columnList->name))
+					if (jetSize && !strcmp("ATTm589825", columnList->name))
 						//!strcmp("ATTm3",columnList->name) || !strcmp("ATTm10",columnList->name) ||!strcmp("ATTm11",columnList->name) ||!strcmp("ATTm1376281",columnList->name) ))
 						wcscpy_s(Name, 256, (wchar_t*)jetBuffer);
 
-					for(i=0;i<jetSize/2;i++)
-						if((wchar_t)jetBuffer[2*i] != '\t' && (wchar_t)jetBuffer[2*i] != '\n' && (wchar_t)jetBuffer[2*i] != '\r')
-							fwprintf(dump,L"%c",(wchar_t)jetBuffer[2*i]);
+					for (i = 0; i < jetSize / 2; i++)
+						if ((wchar_t)jetBuffer[2 * i] != '\t' && (wchar_t)jetBuffer[2 * i] != '\n' && (wchar_t)jetBuffer[2 * i] != '\r')
+							fwprintf(dump, L"%c", (wchar_t)jetBuffer[2 * i]);
 					break;
 				};
 
-				if(strcmp("ace",argv[1]))
-					fprintf(dump,"\t");
+				if (strcmp("ace", argv[1]))
+					fprintf(dump, "\t");
+		}
+	}
+
+		//Resolve DN and add DNT to ancestors chain for sid list
+		if (!strcmp("sid", argv[1]))
+		{
+			if (DNT >= 4)
+			{
+				DN = DNFromAncestors(PDNT, ancestorsList);
+				//wprintf(L"Name: %s, PDNT: %d, DNT: %d, ancestors DN: %s\n",Name, PDNT, DNT, DN);
+				ancestorsList = UpdateAncestorsList(DNT, DN, RDNtyp, Name, ancestorsList);
 			}
+			fwprintf(dump, L"%s", ancestorsList->DN);
 		}
-
-		//Resolve DN and add DNT to ancestors chain
-		if(DNT >= 4)
-		{			
-			DN = DNFromAncestors(PDNT, ancestorsList);
-			//wprintf(L"Name: %s, PDNT: %d, DNT: %d, ancestors DN: %s\n",Name, PDNT, DNT, DN);
-			ancestorsList = UpdateAncestorsList(DNT, DN, RDNtyp, Name, ancestorsList);
-		}
-		fwprintf(dump,L"%s",ancestorsList->DN);
-
 		//DumpACE generates its own newlines
-		if(strcmp("ace",argv[1]))
-			fprintf(dump,"\n");
-	}while(JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
+		if (strcmp("ace", argv[1]))
+			fprintf(dump, "\n");
+}while (JetMove(sesid, tableid, JET_MoveNext, 0) == JET_errSuccess);
 
 	// cleanup
 	printf("cleaning...\n");

@@ -14,7 +14,7 @@ sed
 grep
 
 -----
-INSTALLATION INSTUCTIONS
+INSTALLATION INSTRUCTIONS
 -----
 
 Copy all the files wherever you want.
