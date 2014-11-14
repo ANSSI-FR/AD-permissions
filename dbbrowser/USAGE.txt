@@ -12,10 +12,9 @@ DATA IMPORT
 
 The esent_dump.exe tool will produce the following files:
 ace-ntds.dit-dump.csv	actual content of security descriptors
-cat-ntds.dit-dump.csv	categories identifiers and descriptions
-sid-ntds.dit-dump.csv	object data
+obj-ntds.dit-dump.csv	object data
 
-2) Put the three files *with these filenames* in the import/data/ folder.
+2) Put both files *with these filenames* in the import/data/ folder.
 
 3) Change working directory to import/ and run the batch file to import data:
 $ cd import/
@@ -49,6 +48,8 @@ This allows for periodic auditing and session replay (see FEATURES.txt).
 - by table name: ACE_AD and ACE_EXCH
 - by table description (only tables that are imported by the scripts have 
 descriptions)
+- you should probably hide most columns on your first run (H link next to column
+names) and keep only masks and DNs
 
 5) Don't forget to save you sessions to replay them at a later date: see the 
 bottom of the frontend.

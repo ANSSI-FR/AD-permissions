@@ -1093,7 +1093,7 @@ class DBBrowser
 					if(isset($this->sid[$row[$j]]))
 						$val[] .= $this->sid[$row[$j]];
 					else {
-						$sidsql = "SELECT * FROM SID WHERE ObjectSID = '".$row[$j]."' AND LDAPDisplayName != '' AND LDAPDisplayName IS NOT NULL;";
+						$sidsql = "SELECT * FROM SID WHERE objectSID = '".$row[$j]."' AND distinguishedName != '' AND distinguishedName IS NOT NULL;";
 						$sidreq = mysql_query($sidsql, $this->cid) or die(mysql_error() . " : " . $sql);
 						if(mysql_num_rows($sidreq)) {
 							$sidres = mysql_fetch_row($sidreq);
@@ -1112,7 +1112,7 @@ class DBBrowser
 					if(isset($this->sid[$row[$j]]))
 						$val[] .= $this->sid[$row[$j]];
 					else {
-						$sidsql = "SELECT * FROM ObjectCategory WHERE ObjDistName = '".$row[$j]."' AND LdapDisplayName != '' AND LDAPDisplayName IS NOT NULL;";
+						$sidsql = "SELECT * FROM ObjectCategory WHERE defaultObjectCategory = '".$row[$j]."' AND lDAPDisplayName != '' AND lDAPDisplayName IS NOT NULL;";
 						$sidreq = mysql_query($sidsql, $this->cid) or die(mysql_error() . " : " . $sql);
 						if(mysql_num_rows($sidreq)) {
 							$sidres = mysql_fetch_row($sidreq);
@@ -1271,7 +1271,7 @@ class DBBrowser
 					if(isset($this->sid[$row[$j]]))
 						$result .= $this->sid[$row[$j]];
 					else {
-						$sidsql = "SELECT * FROM SID WHERE ObjectSID LIKE '".$row[$j]."' AND LDAPDisplayName != '' AND LDAPDisplayName IS NOT NULL;";
+						$sidsql = "SELECT * FROM SID WHERE ObjectSID LIKE '".$row[$j]."' AND distinguishedName != '' AND distinguishedName IS NOT NULL;";
 						$sidreq = mysql_query($sidsql, $this->cid) or die(mysql_error() . " : " . $sql);
 						if(mysql_num_rows($sidreq)) {
 							$sidres = mysql_fetch_row($sidreq);
@@ -1290,7 +1290,7 @@ class DBBrowser
 				
 				else if((array_search(mysql_field_name($this->res,$j), array("ObjectCategory")) !== FALSE)) {
 					if(!isset($this->objcat[$row[$j]])) {
-						$sidsql = "SELECT * FROM ObjectCategory WHERE ObjDistName = '".$row[$j]."' AND LdapDisplayName != '' AND LDAPDisplayName IS NOT NULL;";
+						$sidsql = "SELECT * FROM ObjectCategory WHERE defaultObjectCategory = '".$row[$j]."' AND lDAPDisplayName != '' AND lDAPDisplayName IS NOT NULL;";
 						$sidreq = mysql_query($sidsql, $this->cid) or die(mysql_error() . " : " . $sql);
 						if(mysql_num_rows($sidreq)) {
 							$this->objcat[$row[$j]][] = $row[$j];

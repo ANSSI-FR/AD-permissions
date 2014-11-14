@@ -54,20 +54,13 @@ database=`grep 'import_database' "$OWN_PATH/../www/settings.php" | cut -d'"' -f2
 
 parser="$OWN_PATH/scripts/generic_scripts/auto.sh"
 ts=`date +"%Y%m%d_%H%M%S"`
-table_cat="${ts}_Categories"
-table_sid="${ts}_Objects"
+table_obj="${ts}_Objects"
 table_ace="${ts}_SecurityDescriptor"
 
-# Import categories
-if [ -f "./data/cat-ntds.dit-dump.csv" ]; then
-	echo "Importing categories..."
-	$parser "$OWN_PATH/data/cat-ntds.dit-dump.csv" "[$ts] Categories" "$OWN_PATH/../www/" "$table_cat"
-fi
-
 # Import Objects
-if [ -f "./data/sid-ntds.dit-dump.csv" ]; then
+if [ -f "./data/obj-ntds.dit-dump.csv" ]; then
 	echo "Importing objects..."
-	$parser "$OWN_PATH/data/sid-ntds.dit-dump.csv" "[$ts] Objects" "$OWN_PATH/../www/" "$table_sid"
+	$parser "$OWN_PATH/data/obj-ntds.dit-dump.csv" "[$ts] Objects" "$OWN_PATH/../www/" "$table_obj"
 fi
 
 # Import security descriptors
@@ -81,8 +74,9 @@ echo "Creating indexes on joined attributes..."
 echo "*** THIS MIGHT TAKE SOME TIME (hint: watch mysql process status) ***"
 
 echo "ALTER TABLE  \`$table_ace\` ADD INDEX (  \`sd_id\` ) ;" > ./tmp/indexes.sql
-echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`ms-Exch-Mailbox-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
-echo "ALTER TABLE  \`$table_sid\` ADD INDEX (  \`NT-Security-Descriptor\` ) ;" >> ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_ace\` ADD INDEX (  \`TrusteeSID\` ) ;" > ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_obj\` ADD INDEX (  \`msExchMailboxSecurityDescriptor\` ) ;" >> ./tmp/indexes.sql
+echo "ALTER TABLE  \`$table_obj\` ADD INDEX (  \`nTSecurityDescriptor\` ) ;" >> ./tmp/indexes.sql
 
 mysql -u $login -p$pass $database < "./tmp/indexes.sql"
 
@@ -93,49 +87,48 @@ mkdir -p tmp
 echo "Populating global table of categories..."
 
 echo "CREATE TABLE IF NOT EXISTS \`ObjectCategory\` (
-  \`LdapDisplayName\` varchar(255) NOT NULL,
-  \`ObjDistName\` int(11) NOT NULL,
-  KEY \`ObjDistName\` (\`ObjDistName\`)
+  \`lDAPDisplayName\` varchar(255) NOT NULL,
+  \`defaultObjectCategory\` int(11) NOT NULL,
+  KEY \`defaultObjectCategory\` (\`defaultObjectCategory\`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 INSERT INTO ObjectCategory 
-SELECT \`LDAP-Display-Name\`, \`Default-Object-Category\` 
-FROM $table_cat WHERE \`Default-Object-Category\` != 0;" > ./tmp/object_category.sql
+SELECT \`lDAPDisplayName\`, \`defaultObjectCategory\` 
+FROM $table_obj WHERE \`defaultObjectCategory\` != 0;" > ./tmp/object_category.sql
 
 mysql -u $login -p$pass $database < "./tmp/object_category.sql"
 
 # Import GUIDs to auditad.GUID
 echo "Populating global table of GUIDs..."
 echo "CREATE TABLE IF NOT EXISTS \`GUID\` (
-  \`id\` int(11) NOT NULL AUTO_INCREMENT,
   \`value\` varchar(255) DEFAULT NULL,
   \`text\` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (\`id\`)
+  PRIMARY KEY (\`value\`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 INSERT INTO GUID(\`value\`,\`text\`)
-SELECT \`Rights-Guid\`, \`Distinguished-Name\` 
-FROM $table_sid WHERE \`Rights-Guid\` IS NOT NULL 
-	AND \`Rights-Guid\` != '';
+SELECT \`rightsGuid\`, \`distinguishedName\` 
+FROM $table_obj WHERE \`rightsGuid\` IS NOT NULL 
+	AND \`rightsGuid\` != '';
 
 INSERT INTO GUID(\`value\`,\`text\`)
-SELECT \`Schema-ID-Guid\`, \`Distinguished-Name\` 
-FROM $table_sid WHERE \`Schema-ID-Guid\` IS NOT NULL 
-	AND \`Schema-ID-Guid\` != '0'
-	AND \`Schema-ID-Guid\` != '00000000-0000-0000-0000-000000000000';" > ./tmp/guid.sql
+SELECT \`schemaIDGuid\`, \`distinguishedName\` 
+FROM $table_obj WHERE \`schemaIDGuid\` IS NOT NULL 
+	AND \`schemaIDGuid\` != '0'
+	AND \`schemaIDGuid\` != '00000000-0000-0000-0000-000000000000';" > ./tmp/guid.sql
 
 mysql -u $login -p$pass $database < "./tmp/guid.sql"
 
 # Import SIDs to auditad.SID
 echo "Populating global table of SIDs..."
 echo "CREATE TABLE IF NOT EXISTS \`SID\` (
-  \`LDAPDisplayName\` varchar(200) NOT NULL,
-  \`ObjectSID\` varchar(100) NOT NULL,
-  PRIMARY KEY (  \`LDAPDisplayName\` ,  \`ObjectSID\` ) 
+  \`distinguishedName\` varchar(200) NOT NULL,
+  \`objectSID\` varchar(100) NOT NULL,
+  PRIMARY KEY ( \`objectSID\` ) 
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO SID(\`LDAPDisplayName\`,\`ObjectSID\`)
-SELECT \`Distinguished-Name\`, \`Object-SID\` 
-FROM $table_sid WHERE \`Object-SID\` LIKE 'S-%';" > ./tmp/sid.sql
+INSERT IGNORE INTO SID(\`distinguishedName\`,\`objectSID\`)
+SELECT \`distinguishedName\`, \`objectSID\` 
+FROM $table_obj WHERE \`objectSID\` LIKE 'S-%';" > ./tmp/sid.sql
 
 mysql -u $login -p$pass $database < "./tmp/sid.sql"
 
@@ -143,16 +136,15 @@ mysql -u $login -p$pass $database < "./tmp/sid.sql"
 
 # MS Exchange-related table
 query_exch="INSERT INTO \`ACE_EXCH\` (
- \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`distinguishedName\`, \`objectCategory\`, \`objectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
- \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeCN\`
+ \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeDN\`
 )
 SELECT 
- S1.\`Distinguished-Name\`,
- S1.\`Organizational-Unit-Name\` AS \`OU\`,
- S1.\`Object-Category\`,
- S1.\`Object-SID\`,
+ S1.\`distinguishedName\`,
+ S1.\`objectCategory\`,
+ S1.\`objectSID\`,
  A.\`sd_id\`,
  A.\`PrimaryOwner\`,
  A.\`PrimaryGroup\`,
@@ -163,23 +155,22 @@ SELECT
  A.\`ObjectType\`,
  A.\`InheritedObjectType\`,
  A.\`TrusteeSID\`,
- S2.\`LDAPDisplayName\` AS \`TrusteeCN\`
-FROM $table_sid S1
-LEFT OUTER JOIN $table_ace A ON (S1.\`ms-Exch-Mailbox-Security-Descriptor\` = A.\`sd_id\`)
-LEFT OUTER JOIN SID S2 ON (S2.\`ObjectSID\` = A.\`TrusteeSID\`);"
+ S2.\`distinguishedName\` AS \`TrusteeDN\`
+FROM $table_obj S1
+LEFT OUTER JOIN $table_ace A ON (S1.\`msExchMailboxSecurityDescriptor\` = A.\`sd_id\`)
+LEFT OUTER JOIN SID S2 ON (S2.\`objectSID\` = A.\`TrusteeSID\`);"
 
-# MS Exchange-related table # FASTER VERSION (NO static TrusteeCN)
+# MS Exchange-related table # FASTER VERSION (NO static TrusteeDN)
 query_exch_fast="INSERT INTO \`ACE_EXCH\` (
- \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`distinguishedName\`, \`objectCategory\`, \`objectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`
 )
 SELECT 
- S1.\`Distinguished-Name\`,
- S1.\`Organizational-Unit-Name\` AS \`OU\`,
- S1.\`Object-Category\`,
- S1.\`Object-SID\`,
+ S1.\`DistinguishedName\`,
+ S1.\`objectCategory\`,
+ S1.\`objectSID\`,
  A.\`sd_id\`,
  A.\`PrimaryOwner\`,
  A.\`PrimaryGroup\`,
@@ -190,21 +181,20 @@ SELECT
  A.\`ObjectType\`,
  A.\`InheritedObjectType\`,
  A.\`TrusteeSID\`
-FROM $table_sid S1
-LEFT OUTER JOIN $table_ace A ON (S1.\`ms-Exch-Mailbox-Security-Descriptor\` = A.\`sd_id\`);"
+FROM $table_obj S1
+LEFT OUTER JOIN $table_ace A ON (S1.\`msExchMailboxSecurityDescriptor\` = A.\`sd_id\`);"
 
 # AD-related table
 query_ad="INSERT INTO \`ACE_AD\` (
- \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`distinguishedName\`, \`objectCategory\`, \`objectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
- \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeCN\`
+ \`InheritedObjectType\`, \`TrusteeSID\`, \`TrusteeDN\`
 )
 SELECT 
- S1.\`Distinguished-Name\`,
- S1.\`Organizational-Unit-Name\` AS \`OU\`,
- S1.\`Object-Category\`,
- S1.\`Object-SID\`,
+ S1.\`distinguishedName\`,
+ S1.\`objectCategory\`,
+ S1.\`objectSID\`,
  A.\`sd_id\`,
  A.\`PrimaryOwner\`,
  A.\`PrimaryGroup\`,
@@ -215,23 +205,22 @@ SELECT
  A.\`ObjectType\`,
  A.\`InheritedObjectType\`,
  A.\`TrusteeSID\`,
- S2.\`LDAPDisplayName\` AS \`TrusteeCN\`
-FROM $table_sid S1
-LEFT OUTER JOIN $table_ace A ON (S1.\`NT-Security-Descriptor\` = A.\`sd_id\`)
-LEFT OUTER JOIN SID S2 ON (S2.\`ObjectSID\` = A.\`TrusteeSID\`);"
+ S2.\`distinguishedName\` AS \`TrusteeDN\`
+FROM $table_obj S1
+LEFT OUTER JOIN $table_ace A ON (S1.\`nTSecurityDescriptor\` = A.\`sd_id\`)
+LEFT OUTER JOIN SID S2 ON (S2.\`objectSID\` = A.\`TrusteeSID\`);"
 
-# AD-related table # FASTER VERSION (NO static TrusteeCN)
+# AD-related table # FASTER VERSION (NO static TrusteeDN)
 query_ad_fast="INSERT INTO \`ACE_AD\` (
- \`DistinguishedName\`, \`OU\`, \`ObjectCategory\`, \`ObjectSID\`,
+ \`distinguishedName\`, \`objectCategory\`, \`objectSID\`,
  \`sd_id\`, \`PrimaryOwner\`, \`PrimaryGroup\`, \`AceType\`,
  \`AceFlags\`, \`AccessMask\`, \`Flags\`, \`ObjectType\`,
  \`InheritedObjectType\`, \`TrusteeSID\`
 )
 SELECT 
- S1.\`Distinguished-Name\`,
- S1.\`Organizational-Unit-Name\` AS \`OU\`,
- S1.\`Object-Category\`,
- S1.\`Object-SID\`,
+ S1.\`distinguishedName\`,
+ S1.\`objectCategory\`,
+ S1.\`objectSID\`,
  A.\`sd_id\`,
  A.\`PrimaryOwner\`,
  A.\`PrimaryGroup\`,
@@ -242,8 +231,8 @@ SELECT
  A.\`ObjectType\`,
  A.\`InheritedObjectType\`,
  A.\`TrusteeSID\`
-FROM $table_sid S1
-LEFT OUTER JOIN $table_ace A ON (S1.\`NT-Security-Descriptor\` = A.\`sd_id\`);"
+FROM $table_obj S1
+LEFT OUTER JOIN $table_ace A ON (S1.\`nTSecurityDescriptor\` = A.\`sd_id\`);"
 
 # Precompute tables
 

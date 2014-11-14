@@ -3,7 +3,7 @@ AceType
 AceFlags
 AccessMask
 Flags
-NTSecurityDescriptor
-ObjectCategory
+nTSecurityDescriptor
 msExchMailboxSecurityDescriptor
-Default-Object-Category
+defaultObjectCategory
+objectCategory

@@ -11,10 +11,9 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 --
 
 CREATE TABLE IF NOT EXISTS `ACE_AD` (
-  `CommonName` varchar(255) DEFAULT NULL,
-  `OU` varchar(255) DEFAULT NULL,
-  `ObjectCategory` int(11) NOT NULL,
-  `ObjectSID` varchar(255) NOT NULL,
+  `distinguishedName` varchar(255) DEFAULT NULL,
+  `objectCategory` int(11) NOT NULL,
+  `objectSID` varchar(255) NOT NULL,
   `sd_id` int(11) DEFAULT NULL,
   `PrimaryOwner` varchar(255) DEFAULT NULL,
   `PrimaryGroup` varchar(255) DEFAULT NULL,
@@ -25,13 +24,13 @@ CREATE TABLE IF NOT EXISTS `ACE_AD` (
   `ObjectType` varchar(255) DEFAULT NULL,
   `InheritedObjectType` varchar(255) DEFAULT NULL,
   `TrusteeSID` varchar(255) DEFAULT NULL,
-  `TrusteeCN` varchar(255) DEFAULT NULL,
-  KEY `CommonName` (`CommonName`),
-  KEY `TrusteeCN` (`TrusteeCN`),
+  `TrusteeDN` varchar(255) DEFAULT NULL,
+  KEY `distinguishedName` (`distinguishedName`),
+  KEY `TrusteeDN` (`TrusteeDN`),
   KEY `AccessMask` (`AccessMask`),
   KEY `AceFlags` (`AceFlags`),
   KEY `AceType` (`AceType`),
-  KEY `ObjectCategory` (`ObjectCategory`)
+  KEY `objectCategory` (`objectCategory`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -46,10 +45,9 @@ CREATE TABLE IF NOT EXISTS `ACE_AD` (
 --
 
 CREATE TABLE IF NOT EXISTS `ACE_EXCH` (
-  `CommonName` varchar(255) DEFAULT NULL,
-  `OU` varchar(255) DEFAULT NULL,
-  `ObjectCategory` int(11) NOT NULL,
-  `ObjectSID` varchar(255) NOT NULL,
+  `distinguishedName` varchar(255) DEFAULT NULL,
+  `objectCategory` int(11) NOT NULL,
+  `objectSID` varchar(255) NOT NULL,
   `sd_id` int(11) DEFAULT NULL,
   `PrimaryOwner` varchar(255) DEFAULT NULL,
   `PrimaryGroup` varchar(255) DEFAULT NULL,
@@ -60,13 +58,13 @@ CREATE TABLE IF NOT EXISTS `ACE_EXCH` (
   `ObjectType` varchar(255) DEFAULT NULL,
   `InheritedObjectType` varchar(255) DEFAULT NULL,
   `TrusteeSID` varchar(255) DEFAULT NULL,
-  `TrusteeCN` varchar(255) DEFAULT NULL,
-  KEY `CommonName` (`CommonName`),
-  KEY `TrusteeCN` (`TrusteeCN`),
+  `TrusteeDN` varchar(255) DEFAULT NULL,
+  KEY `distinguishedName` (`distinguishedName`),
+  KEY `TrusteeDN` (`TrusteeDN`),
   KEY `AccessMask` (`AccessMask`),
   KEY `AceFlags` (`AceFlags`),
   KEY `AceType` (`AceType`),
-  KEY `ObjectCategory` (`ObjectCategory`)
+  KEY `objectCategory` (`objectCategory`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -122,9 +120,9 @@ CREATE TABLE IF NOT EXISTS `GUID` (
 --
 
 CREATE TABLE IF NOT EXISTS `ObjectCategory` (
-  `LdapDisplayName` varchar(255) NOT NULL,
-  `ObjDistName` int(11) NOT NULL,
-  KEY `ObjDistName` (`ObjDistName`)
+  `lDAPDisplayName` varchar(255) NOT NULL,
+  `defaultObjectCategory` int(11) NOT NULL,
+  KEY `defaultObjectCategory` (`defaultObjectCategory`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
@@ -140,15 +138,16 @@ CREATE TABLE IF NOT EXISTS `ObjectCategory` (
 --
 
 CREATE TABLE IF NOT EXISTS `SID` (
-  `LDAPDisplayName` varchar(255) DEFAULT NULL,
-  `ObjectSID` varchar(255) DEFAULT NULL
+  `distinguishedName` varchar(255) DEFAULT NULL,
+  `objectSID` varchar(100) DEFAULT NULL,
+  PRIMARY KEY `objectSID` (`objectSID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `SID`
 --
 
-INSERT INTO `SID` (`LDAPDisplayName`, `ObjectSID`) VALUES
+INSERT INTO `SID` (`distinguishedName`, `objectSID`) VALUES
 ('Null Authority', 'S-1-0'),
 ('Nobody', 'S-1-0-0'),
 ('World Authority', 'S-1-1'),
