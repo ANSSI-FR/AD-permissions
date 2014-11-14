@@ -71,11 +71,10 @@ char exchangeMailboxSDCol[32] = "ATTp";
 void PrintUsage()
 {
 	printf("Usage: esent_dump [option] <ntdsfile>\n");
-	printf("Options, mutually exclusive, do 1st 4 for ACE audit:\n");
+	printf("Options, mutually exclusive, do 1st 3 for ACE audit:\n");
 	printf("\tatt: dump column naming columns\n");
-	printf("\tsid: dump the Common-Name/OU-Name to SID, Object-Category, NT SD and Mailbox SD indexes\n");
+	printf("\tobj: dump the DN to SID, Object-Category, NT SD and Mailbox SD indexes\n");
 	printf("\tace: dump the AD ACE from sd_table\n");
-	printf("\tcat: dump object categories number to description\n");
 	printf("\tad: dump the whole AD datatable\n");
 	exit(-1);
 }
@@ -88,7 +87,7 @@ unsigned char * translateATT(
 	)
 {
 	if (!strcmp(columnListName, exchangeMailboxSDCol))
-		return "ms-Exch-Mailbox-Security-Descriptor";
+		return "msExchMailboxSecurityDescriptor";
 	if (!strcmp(columnListName, "DNT_col"))
 		return "DNT_col";
 	if (!strcmp(columnListName, "PDNT_col"))
@@ -98,49 +97,49 @@ unsigned char * translateATT(
 
 	switch (atoi(columnListName + 4)) {
 	case 3:
-		return "Common-Name";
+		return "commonName";
 	case 11:
-		return "Organizational-Unit-Name";
+		return "organizationalUnitName";
 	case 1376281:
-		return "Domain-Component";
+		return "domainComponent";
 	case 10:
-		return "Organization-Name";
+		return "organizationName";
 	case 589825:
-		return "RDN";
+		return "rDN";
 	case 131532:
-		return "LDAP-Display-Name";
+		return "lDAPDisplayName";
 	case 590480:
-		return "User-Principal-Name";
+		return "userPrincipalName";
 	case 131102:
-		return "Attribute-ID";
+		return "attributeID";
 	case 591540:
 		return "msDS-IntId";
 	case 590689:
-		return "Pek-List";
+		return "pekList";
 	case 590045:
-		return "Username";
+		return "username";
 	case 589879:
-		return "DBCS-Pwd";
+		return "dBCSPwd";
 	case 589914:
-		return "Unicode-Pwd";
+		return "unicodePwd";
 	case 589970:
-		return "Object-Sid";
+		return "objectSid";
 	case 590433:
-		return "Sid-History";
+		return "sidHistory";
 	case 589832:
-		return "User-Account-Control";
+		return "userAccountControl";
 	case 589949:
-		return "Supplemental-Credentials";
+		return "supplementalCredentials";
 	case 590606:
-		return "Object-Category";
+		return "objectCategory";
 	case 590607:
-		return "Default-Object-Category";
+		return "defaultObjectCategory";
 	case 131353:
-		return "NT-Security-Descriptor";
+		return "nTSecurityDescriptor";
 	case 589972:
-		return "Schema-ID-GUID";
+		return "schemaIDGUID";
 	case 590164:
-		return "Rights-Guid";
+		return "rightsGuid";
 	}
 	return "";
 }
@@ -155,21 +154,19 @@ int ValidateColumn(
 {
 	if (!strcmp("ad", main_arg)
 		|| (!strcmp("ace", main_arg) && (!strcmp("sd_value", columnListName) || !strcmp("sd_id", columnListName)))
-
-		|| (!strcmp("sid", main_arg) && (
-		//ntsd, object-sid, schema-id-guid
+		|| (!strcmp("obj", main_arg) && (
+		//ntSD, object-sid, schema-id-guid
 		!strcmp("ATTp131353", columnListName) || !strcmp("ATTr589970", columnListName) || !strcmp("ATTk589972", columnListName)
-		//object-category, rights-guid
+		//object-category, rights-guid, exchange SD
 		|| !strcmp("ATTb590606", columnListName) || !strcmp("ATTm590164", columnListName) || !strcmp(exchangeMailboxSDCol, columnListName)
-		//CN,OU,DC,O
-		//|| !strcmp("ATTm3",columnListName) || !strcmp("ATTm11",columnListName) || !strcmp("ATTm1376281",columnListName) || !strcmp("ATTm10",columnListName)
+		//ldapDisplayName,defaultObjectCategory
+		|| !strcmp("ATTm131532", columnListName) || !strcmp("ATTb590607", columnListName)
 		//RDN
 		|| !strcmp("ATTm589825", columnListName)
 		|| !strcmp("RDNtyp_col", columnListName) || !strcmp("PDNT_col", columnListName) || !strcmp("DNT_col", columnListName)
 		))
-
+		//ldapDisplayName,attributeID, msDSIntId
 		|| (!strcmp("att", main_arg) && (!strcmp("ATTm131532", columnListName) || !strcmp("ATTc131102", columnListName) || !strcmp("ATTj591540", columnListName)))
-		|| (!strcmp("cat", main_arg) && (!strcmp("ATTm131532", columnListName) || !strcmp("ATTb590607", columnListName)))
 		)
 		return 1;
 	else
@@ -217,7 +214,7 @@ void DumpACE(
 	for (i = 0; GetAce(dacl, i, &ace); i++)
 	{
 		//Remove inherited ACE
-		if ((((ACE_HEADER *)ace)->AceFlags & INHERITED_ACE) != INHERITED_ACE)
+		//if ((((ACE_HEADER *)ace)->AceFlags & INHERITED_ACE) != INHERITED_ACE)
 		{
 			fwprintf(dump, L"\n");
 
@@ -241,10 +238,10 @@ void DumpACE(
 			{
 				switch (((ACCESS_ALLOWED_OBJECT_ACE *)ace)->Flags)
 				{
-					//not any OT
+					//not any OT, should not exist
 				case 0x0:
 				{
-					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - 2 * sizeof(GUID)),
+					ConvertSidToStringSid((PSID)((PBYTE)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - 2 * sizeof(GUID)),
 						&stringTrustee
 						);
 					break;
@@ -254,7 +251,7 @@ void DumpACE(
 				case 0x1:
 				{
 					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->ObjectType), &OTGuid);
-					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
+					ConvertSidToStringSid((PSID)((PBYTE)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
 						&stringTrustee
 						);
 					break;
@@ -263,7 +260,7 @@ void DumpACE(
 				case 0x2:
 				{
 					UuidToString(&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->InheritedObjectType), &IOTGuid);
-					ConvertSidToStringSid((PSID)((DWORD)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
+					ConvertSidToStringSid((PSID)((PBYTE)&(((ACCESS_ALLOWED_OBJECT_ACE *)ace)->SidStart) - sizeof(GUID)),
 						&stringTrustee
 						);
 					break;
@@ -455,14 +452,14 @@ int main(int argc, char * argv[]) {
 	if (argc < 3)
 		PrintUsage();
 
-	if (!strcmp(argv[1], "ad") || !strcmp(argv[1], "sid") || !strcmp(argv[1], "att") || !strcmp(argv[1], "cat") || !strcmp(argv[1], "users"))
+	if (!strcmp(argv[1], "ad") || !strcmp(argv[1], "obj") || !strcmp(argv[1], "att"))
 		targetTable = "datatable";
 	else if (!strcmp(argv[1], "ace"))
 		targetTable = "sd_table";
 	else
 		PrintUsage();
 
-	if (!strcmp(argv[1], "sid"))
+	if (!strcmp(argv[1], "obj"))
 	{
 		printf("To dump Exchange Mailbox security descriptors, \nenter the ATT value for your specific Exchange Schema:\n(msDS-IntId value for msExchMailboxSecurityDescriptor, \nfound in 'esent_dump att' results)\n");
 		printf("Otherwise just input anything and press enter\n");
@@ -606,8 +603,8 @@ int main(int argc, char * argv[]) {
 			if (ValidateColumn(argv[1], columnList->name))
 				fprintf(dump, "%s\t", translateATT(columnList->name));
 	};
-	if (!strcmp("sid", argv[1]))
-		fprintf(dump, "Distinguished-Name");
+	if (!strcmp("obj", argv[1]))
+		fprintf(dump, "distinguishedName");
 	fprintf(dump, "\n");
 
 	printf("Dumping content...\n");
@@ -719,12 +716,12 @@ int main(int argc, char * argv[]) {
 						stringSid = NULL;
 					}
 					//NT Security Descriptor index to lookup in sd_table
-					else if (!strcmp("sid", argv[1]) && (!strcmp("ATTp131353", columnList->name) || !strcmp(exchangeMailboxSDCol, columnList->name)))
+					else if (!strcmp("obj", argv[1]) && (!strcmp("ATTp131353", columnList->name) || !strcmp(exchangeMailboxSDCol, columnList->name)))
 					{
 						fprintf(dump, "%d", *(int *)jetBuffer);
 					}
 					//Schema-Id-Guid
-					else if (!strcmp("sid", argv[1]) && !strcmp("ATTk589972", columnList->name))
+					else if (!strcmp("obj", argv[1]) && !strcmp("ATTk589972", columnList->name))
 					{
 						UuidToString((UUID *)jetBuffer, &Guid);
 						fwprintf(dump, L"%s", Guid);
@@ -765,7 +762,7 @@ int main(int argc, char * argv[]) {
 	}
 
 		//Resolve DN and add DNT to ancestors chain for sid list
-		if (!strcmp("sid", argv[1]))
+		if (!strcmp("obj", argv[1]))
 		{
 			if (DNT >= 4)
 			{
@@ -787,6 +784,13 @@ int main(int argc, char * argv[]) {
 	JetEndSession(sesid, 0);
 	JetTerm(instance);
 	fclose(dump);
+	
+	if (!strcmp("att", argv[1]))
+	{
+		printf("[*] Grepping Exchange SD column from attributes list (name/msDS-IntID/attributeID):\n");
+		system("findstr \"msExchMailboxSecurityDescriptor\" att-ntds.dit-dump.csv");
+	}
+
 	return 0;
 }
 
